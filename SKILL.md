@@ -139,7 +139,7 @@ When this skill activates, every answer must include or perform these steps:
 
     | Service | Owner | Tier | SLO | Compliance | Last reviewed | Index |
     | --- | --- | --- | --- | --- | --- | --- |
-    | <slug> | <team> | <tier> | <SLO> | <PII/GDPR/none> | <YYYY-MM-DD> | [README](services/<slug>/README.md) |
+    | <slug> | <team> | <tier> | <SLO> | <PII/GDPR/none> | <YYYY-MM-DD> | [README](../services/<slug>/README.md) |
 
     ## Cross-cutting concerns
 
