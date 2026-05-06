@@ -132,7 +132,43 @@ If you want code, ask for it explicitly: "Show me a Go boundary snippet for the 
 
 ## 3. Walkthrough: shipping order fulfillment and locking in shared knowledge
 
-A complete journey — pick patterns, define contracts, implement, review, ship, promote a recurring rule to a platform standard, then ship a second feature that inherits the standard. Each step uses one slash command.
+A complete journey from "describe what you're building" to a launched feature with its decisions, contracts, code, tests, and runbooks all linked into a navigable system.
+
+**The vision**: you describe what you want, the skill guides you A to Z, and you approve or revise at each step. You don't have to remember 12 commands. Use `/build` and reply with `continue` / `revise: <changes>` / `skip <step>` / `stop` between steps.
+
+### The smooth path: `/build`
+
+```text
+/build order-fulfillment Build an order-fulfillment service. Orders API
+writes to Postgres. Downstream: payments, inventory, shipping,
+notifications. Saga that survives partial failures and supports
+compensation. Owner: Orders Platform. Multi-tenant w/ tenant_id.
+PCI-adjacent. 1k orders/sec p99.
+```
+
+`/build` runs the full per-feature pipeline:
+
+1. `/design` — patterns, system concerns, file plan → **approve or revise**
+2. `/contract` per channel — schemas, AsyncAPI, contract docs → **approve or revise**
+3. `/architecture` (optional) — feature-scoped ADRs from open questions → **approve or skip**
+4. `/implement` — source code from the docs → **approve or revise**
+5. `/test` — tests grounded in contracts and design → **approve or revise**
+6. `/review` — architectural findings → **address blockers or continue**
+7. `/runbook` (optional, per incident type) — DLQ triage, replay, failover → **approve, skip, or pick**
+8. `/failure-mode` — blast-radius analysis → **acknowledge**
+9. `/readiness` — tier assessment → **acknowledge**
+10. `/prelaunch` — GO/NO-GO synthesis → **done**
+
+Between each step the agent emits a confirmation like `Design written to docs/features/order-fulfillment/design.md. Reply 'continue' for /contract, or 'revise: <changes>' to update.` — you stay in control without retyping prompts.
+
+If after Step 1 the design suggests the work is below the skill's threshold (no patterns named, all `<TBD>` system concerns), `/build` aborts and asks if you want to proceed anyway. The skill catches over-engineering early.
+
+After `/build` completes for the first feature, you'll typically run two more steps **outside** the orchestrator:
+
+11. `/standard <topic>` — promote a recurring rule (e.g. observability) to a platform standard at `docs/system/standards/`.
+12. `/build <next-feature>` — design a second feature that inherits the standard via its `## Shared references` section.
+
+The granular per-step walkthrough below shows what each command produces in detail — useful when you're learning the system or want to re-run a single step.
 
 ### Reset before testing
 
