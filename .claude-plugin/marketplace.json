@@ -1,0 +1,20 @@
+{
+  "name": "adibhanna-distributed-systems-patterns",
+  "owner": {
+    "name": "Adi Bhanna",
+    "url": "https://github.com/adibhanna"
+  },
+  "metadata": {
+    "description": "Distributed-systems, messaging, and integration patterns skill for AI coding agents."
+  },
+  "plugins": [
+    {
+      "name": "distributed-systems-patterns",
+      "source": {
+        "source": "github",
+        "repo": "adibhanna/distributed-systems-patterns"
+      },
+      "description": "Apply distributed-systems, messaging, and integration patterns when designing, reviewing, or operating event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, or multi-region code. Includes 8 slash commands (/design, /review, /architecture, /contract, /runbook, /failure-mode, /readiness, /ship) and 27 reference files."
+    }
+  ]
+}

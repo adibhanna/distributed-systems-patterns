@@ -1,0 +1,17 @@
+---
+description: Generate a decision-ready architecture doc, RFC, ADR, or implementation plan with alternatives
+---
+
+Invoke the `distributed-systems-patterns` skill.
+
+Load `reference/architecture-documentation.md` for the document templates and section requirements, and `reference/architecture-examples.md` for filled ADR/RFC examples.
+
+Produce a decision-ready document, not an essay. The document must help engineers implement and leaders approve.
+
+1. Ask the user to pick the document type: Architecture Overview, RFC / Design Proposal, ADR, Implementation Plan, Migration Plan, Production Readiness Review, or Event Contract Spec. Default to RFC when a decision is not final, ADR when one decision must be recorded.
+2. Fill the required sections from `reference/architecture-documentation.md`: Executive Summary, Goals/Non-Goals, Context, Requirements and SLOs, Proposed Architecture, Pattern Mapping, Data and Contracts, Message and Request Flows, Consistency and Transactions, Scale and Performance, Resilience and Failure Modes, Observability and Operations, Security and Compliance, Alternatives Considered, Rollout and Migration Plan, Testing and Verification, Risks and Open Questions.
+3. Include the pattern mapping table: `Concern | Pattern | Tool/implementation | Why | Verification`. Name integration patterns and distributed-systems patterns - both, when relevant.
+4. Compare at least 2-3 plausible alternatives with explicit trade-offs and the reason each non-recommended option was rejected.
+5. Include a rollout/rollback plan: phases, compatibility, dual-write/dual-read if needed, backfill, abort metrics, rollback owner.
+6. Add diagrams as Mermaid (flowchart, sequence, state) near the section they explain.
+7. Run the architecture review rubric from `reference/architecture-documentation.md` before returning the document: patterns named, owners and boundaries defined, failure paths covered, alternatives and trade-offs shown, rollout/rollback included, operations/security/cost addressed, open questions explicit with owners.

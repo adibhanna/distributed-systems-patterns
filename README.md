@@ -6,18 +6,27 @@
 
 An AI-agent skill for designing, implementing, documenting, and reviewing distributed systems, integration, messaging, event-driven architecture, microservices, enterprise scaling, resilience, cloud platforms, and cross-service workflow code.
 
-## Install (one command)
+## Install
 
-Clone the repo and run the installer. It detects your tools (Claude Code, Codex, OpenCode) and creates the right symlinks idempotently.
+### Option A — Claude Code plugin marketplace (recommended)
+
+```text
+/plugin marketplace add adibhanna/distributed-systems-patterns
+/plugin install distributed-systems-patterns@adibhanna-distributed-systems-patterns
+```
+
+Claude Code discovers the skill and all 8 slash commands automatically.
+
+### Option B — One-command symlink install (Claude Code, Codex, OpenCode)
 
 ```bash
 git clone https://github.com/adibhanna/distributed-systems-patterns ~/.agents/skills/distributed-systems-patterns
 ~/.agents/skills/distributed-systems-patterns/scripts/install.sh
 ```
 
-Use `--all` to install for every supported tool whether or not its config dir exists yet. Use `--dry-run` to preview.
+Detects Claude Code, Codex, and OpenCode and creates idempotent symlinks for both the skill and the slash commands. Use `--all` to install for every supported tool, `--dry-run` to preview.
 
-Then verify your install:
+Verify:
 
 ```bash
 bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
@@ -25,11 +34,26 @@ bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
 
 `validate_skill.sh` runs locally with `python3` only (no Ruby, no ripgrep), and CI runs the same validator on every push.
 
-## Manual install
+## Slash commands
 
-The installer covers the common path. For per-tool detail or non-detected tools, see:
+Once installed, these commands invoke the skill in opinionated ways:
 
-- Claude Code - `~/.claude/skills/distributed-systems-patterns` symlink. See [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
+| Command | What it does |
+| --- | --- |
+| `/design` | Pick patterns, name modern tools, run reliability checklist before coding |
+| `/review` | Production-readiness review on the current diff — anti-patterns, reliability gaps |
+| `/architecture` | Generate a decision-ready architecture doc, RFC, ADR, or implementation plan |
+| `/contract` | Design or review a message contract — CloudEvents, AsyncAPI 3.1, schema versioning |
+| `/runbook` | Generate an operational runbook — DLQ, lag, replay, schema rollback, failover |
+| `/failure-mode` | Failure-mode analysis — first failure, worst duplicate, blocked partition, retry storm |
+| `/readiness` | Map the change to a readiness tier — Prototype, Service-ready, Production-ready, Enterprise-critical |
+| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback plan |
+
+When loaded via the plugin marketplace, commands are namespaced as `/distributed-systems-patterns:<name>`.
+
+## Manual install (per-tool detail)
+
+- Claude Code - `~/.claude/skills/distributed-systems-patterns` skill + `~/.claude/commands/distributed-systems-patterns/` commands. See [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
 - Codex CLI - activation block appended to `~/.codex/AGENTS.md`. See [`docs/codex-setup.md`](docs/codex-setup.md).
 - OpenCode - `~/.config/opencode/skills/distributed-systems-patterns` symlink, or per-project. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
 - Cursor - per-repo project rule under `.cursor/rules/`. Not auto-installed. See [`docs/cursor-setup.md`](docs/cursor-setup.md).

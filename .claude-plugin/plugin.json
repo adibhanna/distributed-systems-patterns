@@ -1,0 +1,13 @@
+{
+  "name": "distributed-systems-patterns",
+  "description": "Apply distributed-systems, messaging, and integration patterns when designing, reviewing, or operating event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, or multi-region code. Go-first code samples.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Adi Bhanna",
+    "url": "https://github.com/adibhanna"
+  },
+  "homepage": "https://github.com/adibhanna/distributed-systems-patterns",
+  "repository": "https://github.com/adibhanna/distributed-systems-patterns",
+  "license": "MIT",
+  "commands": "./.claude/commands"
+}

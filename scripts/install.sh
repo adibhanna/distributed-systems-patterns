@@ -83,7 +83,20 @@ link_to() {
 
 install_claude_code() {
     if [[ -d "$HOME/.claude" || $ALL -eq 1 ]]; then
-        link_to "Claude Code" "$HOME/.claude/skills/$SKILL_NAME"
+        link_to "Claude Code skill" "$HOME/.claude/skills/$SKILL_NAME"
+        # Also surface slash commands at user level so /design, /review, etc. work
+        # without requiring the plugin marketplace install.
+        local cmd_target="$HOME/.claude/commands/$SKILL_NAME"
+        local cmd_source="$CANONICAL/.claude/commands"
+        if [[ -L "$cmd_target" ]]; then
+            log_ok "Claude Code commands already linked"
+        elif [[ -e "$cmd_target" ]]; then
+            log_warn "Claude Code commands exist and are not a symlink: $cmd_target (skipping)"
+        else
+            run mkdir -p "$HOME/.claude/commands"
+            run ln -s "$cmd_source" "$cmd_target"
+            log_ok "Claude Code commands linked (8 slash commands available)"
+        fi
     else
         log_skip "Claude Code (no ~/.claude directory)"
     fi
