@@ -4,9 +4,9 @@ description: Design an integration or event flow — patterns, modern tools, rel
 
 Invoke the `distributed-systems-patterns` skill.
 
-Load `reference/decision-tree.md` for problem-to-pattern lookup, `reference/catalog.md` for fuller pattern detail, and `reference/modern-integration-field-guide.md` for modern realizations.
+Load `reference/decision-tree.md` for problem-to-pattern lookup. Only load `reference/catalog.md` or `reference/modern-integration-field-guide.md` if the decision-tree branch points at a pattern you cannot name from memory or the user explicitly asks about modern realizations.
 
-The user has a new integration or event-flow problem. Produce a written design document, not just a chat response.
+The user has a new integration or event-flow problem. Produce a written design document, not just a chat response. **Default to a tight design (target 100-150 lines).** A bloated design doc is a worse decision artifact than a tight one — readers skim and the cost of generating extra prose hurts iteration speed. If the user says "deep design", "full", or "thorough", expand each section; otherwise stay tight.
 
 1. Classify the integration style: File Transfer, Shared Database, Remote Procedure Invocation, or Messaging. State why messaging/distribution is required instead of a simpler local design.
 2. Walk `reference/decision-tree.md` to the matching problem branch and name the patterns from `reference/catalog.md` - integration patterns plus distributed-systems patterns when scale, resilience, or boundaries are in play.
@@ -47,15 +47,34 @@ Use this structure:
 - **Lifecycle**: <creation date; deprecation trigger; replacement plan>
 
 ## Integration style
+[1-3 lines: which style and why messaging vs RPC vs shared DB vs file]
+
 ## Patterns
+[Bullet list of named patterns from the catalog. One line per pattern, optionally one short clause of justification. No long paragraphs.]
+
 ## Reliability checklist (8 answers)
+[One line per question: Delivery / Idempotency / Bad-message / Retry / Ordering / Schema / Observability / Failure-boundary. Answer in <=15 words each.]
+
 ## Distributed-systems checklist (6 answers, when applicable)
+[One line per question: Boundary / Consistency / Scaling axis / Failure mode / Backpressure / Operations. Skip the section entirely if scale/resilience/multi-region is out of scope.]
+
 ## Modern realization
+[Bullet list mapping each pattern to a tool *category* (e.g. "a CDC tool", "a Kafka-compatible broker"). Name specific packages only when the user has already picked one.]
+
 ## Anti-patterns to avoid
+[Just the names from SKILL.md plus a 1-clause why-this-design-might-trip-it. No long paragraphs.]
+
 ## Boundary contracts (conceptual, not code)
+[Bullet list per channel: name, event type, ordering key, idempotency key, retention, DLQ owner, compatibility mode. <=10 lines total. Schema details belong in /contract.]
+
 ## File and component plan
+[Bullet list of <=15 source/migration/IaC paths the implementation will touch. One line per file. No code.]
+
 ## Open questions
+[Bullet list of <=8 unresolved decisions with owner and target date. Use `<YYYY-MM-DD>` if no date.]
+
 ## Readiness tier and gaps
+[Tier name + 3-5 bullet gaps to the next tier. Keep tight.]
 
 ## Related artifacts
 - Architecture decisions: `docs/adr/` (ADRs that record specific choices made here)

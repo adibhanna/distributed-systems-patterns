@@ -118,6 +118,8 @@ When this skill activates, every answer must include or perform these steps:
     - **Runbooks**: <list of docs/runbooks/*<slug>*.md>
     - **Launch decisions**: <list of docs/launches/<slug>-*.md>
 
+    Do NOT pre-list "Planned" artifacts beyond what already exists; the index reflects state, not roadmap. The user can ask explicitly for a roadmap if they want one.
+
     ## Dependencies
     - **Upstream services**: <list>
     - **Downstream services**: <list>
@@ -127,6 +129,8 @@ When this skill activates, every answer must include or perform these steps:
     ## Channels owned
     - <channel-name>: <produced | consumed | both>. See <link to contract>.
     ```
+
+    Keep the per-service README tight. Aim for 30-60 lines total. Each system-concerns line is one phrase, not a paragraph. Each dependency entry is one bullet, not three sub-bullets.
 
     On every artifact write, append or update the relevant section: `/design` populates Service info + Artifacts.Design + System concerns; `/contract` adds an entry to Channels owned and links the contract; `/runbook` adds to Artifacts.Runbooks; `/architecture` adds to Artifacts.ADRs; `/ship` adds to Artifacts.Launch decisions and updates Tier + Last reviewed. If the file does not exist, create it with placeholders.
 
