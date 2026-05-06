@@ -22,7 +22,7 @@ A green run means the skill files are valid; a red run names what's wrong.
 
 **Commands write files** for structured deliverables (design docs, ADRs, contract schemas, runbooks, launch decisions). Use `/design`, `/architecture`, `/contract`, `/runbook`, `/ship` whenever you want a persistent artifact in the repo.
 
-**Cold-start prompts give you guidance in chat.** The skill auto-activates on distributed-systems vocabulary and walks the patterns + reliability checklist + Go example, but does not save anything to disk unless you ask. Use cold-start when you're exploring or want to think out loud.
+**Cold-start prompts give you guidance in chat.** The skill auto-activates on distributed-systems vocabulary and walks the patterns + reliability checklist + decisions, but does not save anything to disk unless you ask. Use cold-start when you're exploring or want to think out loud.
 
 Cold-start example:
 
@@ -99,15 +99,17 @@ Type:
 ```text
 /design Build an order-fulfillment system. Orders API writes to Postgres.
 Downstream services: payments, inventory, shipping, notifications. Need a
-saga that survives partial failures and supports compensation.
+saga that survives partial failures and supports compensation. Owner:
+Orders Platform team. Multi-tenant with tenant_id partitioning. Capacity:
+1k orders/sec p99. PCI in scope (cards never enter our pipeline).
 ```
 
-The command loads `reference/decision-tree.md` and `reference/catalog.md`, classifies the integration style, and produces:
+The command:
 
-- Pattern map: `Event Message + Transactional Outbox + Datatype Channel + Process Manager (Saga) + Idempotent Receiver + Dead Letter Channel + Compensation`.
-- Modern realization: Postgres outbox + Debezium → Kafka, Temporal for the saga, CloudEvents envelopes, AsyncAPI 3.1 contracts.
-- 8-question reliability checklist answered.
-- A pattern-mapping table you can paste into a design doc.
+- Writes `docs/designs/order-fulfillment-design.md` with `## Summary` (status, date, TL;DR), `## System concerns` (owner, tenancy, compliance, cost, capacity, DR, lifecycle — `<TBD>` for unknowns), pattern map, 8-question reliability checklist, distributed-systems checklist, modern-realization mapping (a CDC tool, a Kafka-compatible broker, a workflow engine — categories, not specific packages unless you ask), boundary contracts at the conceptual level, file/component plan, open questions, readiness tier.
+- Creates or updates `docs/services/order-fulfillment/README.md` (per-service index) with the design link and the system-concerns block.
+- Creates or updates `docs/system/catalog.md` (top-level registry) with one row for the service.
+- Emits a one-line confirmation in chat: `Design written to docs/designs/order-fulfillment-design.md` plus the updated index/catalog paths.
 
 ### Step 2 — `/contract` — define `orders.placed.v1`
 
@@ -120,33 +122,30 @@ notifications-service. Required fields: order_id, customer_id, total_cents,
 items[]. Need per-order ordering.
 ```
 
-The command loads `reference/message-contract-template.md` and `reference/schema-migration.md` and produces:
+The command writes three files:
 
-- A CloudEvents 1.0.2 JSON envelope filled with your fields plus the standard extensions (`partitionkey: order_id`, `correlationid`, `causationid`, `traceparent`).
-- An AsyncAPI 3.1 channel/operation/message/schema block for `orders.placed.v1`.
-- Compatibility mode: BACKWARD (Confluent default; consumers can read new producer messages).
-- A versioning policy stating when to spin up `orders.placed.v2` (renames, removed fields, semantic changes).
-- A CI gate snippet for schema-compatibility checks.
+- `schemas/orders.placed.v1.json` — payload schema (Avro/Protobuf/JSON Schema).
+- `asyncapi/orders.placed.v1.yaml` — AsyncAPI 3.1 channel + operation + message.
+- `docs/contracts/orders.placed.v1.md` — human-readable contract with `## Summary` (status, date, channel, owner, TL;DR), `## System concerns` (compliance class, retention, cost), CloudEvents 1.0.2 envelope example, compatibility mode (BACKWARD by default), versioning policy (when v2 is required), DLQ owner, replay/redrive policy, and `## Related artifacts` linking back to the design.
 
-### Step 3 — Implement
+It also updates `docs/services/order-fulfillment/README.md` (adds the channel to "Channels owned" and the contract to "Artifacts") and `docs/system/catalog.md` (refreshes the service row).
 
-Ask normally:
+Confirmation in chat: `Contract orders.placed.v1 written: schemas/..., asyncapi/..., docs/contracts/...`
+
+### Step 3 — Implementation lives outside the skill
+
+The skill produces decisions, contracts, and operational artifacts. It does **not** produce production handlers by default. Implementation is your engineering team's work — once the design and contract have landed, the file/component plan in the design doc tells your team which source files to write.
+
+If you want a small boundary snippet to anchor the team (e.g. the exact outbox INSERT, the dedup check, the retry classifier), ask explicitly:
 
 ```text
-Implement the producer side of orders.placed.v1 in Go using the
-Transactional Outbox pattern. Show the Postgres outbox schema, the
-PlaceOrder function that writes the domain row + outbox row in one
-transaction, and a Debezium connector config.
+Show me a boundary snippet for the Transactional Outbox INSERT, in the
+language of this repo. Library-agnostic where possible.
 ```
 
-The skill produces production-shaped Go (matches `reference/go-examples.md`):
+The skill returns a minimal sample at the pattern boundary (one comment line: `// Pattern: Transactional Outbox`), in the repo's language if one is detected. Specific package picks (which Postgres driver, which CDC tool) stay with your team — the skill recommends categories, not packages, unless you ask.
 
-- Outbox SQL schema with the unpublished index.
-- `PlaceOrder(ctx, tx, order)` writing both rows atomically, with `// Pattern: Transactional Outbox` annotations and CloudEvents envelope construction.
-- OpenTelemetry trace-context injection on every hop.
-- Notes on what NOT to do (publish directly after `tx.Commit()`).
-
-### Step 4 — `/review` — production-readiness review
+### Step 4 — `/review` — architectural review
 
 After your team writes the consumer, run:
 
@@ -154,12 +153,16 @@ After your team writes the consumer, run:
 /review the inventory consumer in src/inventory/consumer.go and src/inventory/inbox.go
 ```
 
-The command loads `reference/checklist.md` and `reference/failure-modes.md` and:
+This is **architectural review**, not line-by-line code review. The command identifies which patterns the change touches, which contracts it affects, which anti-patterns it introduces, and which reliability + system-concerns evidence it answers or leaves open.
 
-- Walks the 8-question reliability checklist + the distributed-systems checklist over the diff.
-- Flags anti-patterns by file:line. Common hits in real reviews: missing `Idempotent Receiver`, ack-before-commit (offset committed before DB write), unbounded retry, no DLQ owner, payload switch on event type instead of `Datatype Channel`.
-- Categorizes findings as Critical / Important / Suggestion.
-- Recommends a readiness-tier downgrade if checklist items are unanswered.
+- Patterns touched: Outbox? Process Manager? Idempotent Receiver? Circuit Breaker?
+- Contracts affected: new channel? schema change? compatibility break? DLQ owner shift?
+- 8-question reliability checklist walked: each question marked Answered, Open, or Regressed.
+- System concerns walked: ownership change? tenancy boundary? cost owner? compliance class? capacity envelope? DR posture?
+- Anti-patterns: dual-write, ack-before-commit, unbounded retry, retry storm, distributed monolith, missing trace context.
+- Readiness-tier impact: does the change move the service up, down, or sideways?
+
+Findings categorize as **Critical** (launch-blocking anti-pattern or contract break), **Important** (reliability regression or contract weakening), **Suggestion** (architecture tightening), or **System** (touches ownership, tenancy, compliance, cost, capacity, DR, or lifecycle). Conversational output — not a file. If material new System facts emerge, the command suggests updating `docs/services/<slug>/README.md`.
 
 Output shape:
 
@@ -167,22 +170,24 @@ Output shape:
 ## Findings
 
 ### Critical
-- src/inventory/consumer.go:142 — offset committed before inbox row inserted
-  (ack-before-commit). Risk: message loss on consumer crash. Fix: commit
-  offset only after `tx.Commit()` returns nil.
+- src/inventory/consumer.go:142 — ack-before-commit. Inbox row inserted
+  AFTER offset commit. Risk: message loss on consumer crash. Pattern:
+  Idempotent Receiver requires the inbox write and side-effect to commit
+  together; offset commits last.
 
 ### Important
-- src/inventory/consumer.go:88 — no max-retry cap; transient errors will
-  loop forever. Fix: bounded exponential backoff with jitter, max 5 attempts,
-  classified transient vs permanent.
+- src/inventory/consumer.go:88 — unbounded retry. Pattern: Retry classifier
+  must distinguish transient from permanent; permanent goes to DLQ
+  immediately.
 
-### Suggestion
-- src/inventory/inbox.go:23 — inbox retention not configured. Recommend 30 days
-  to cover broker retention + replay window.
+### System
+- The inventory service has no listed cost owner in
+  docs/services/order-fulfillment/README.md. With outbox + Debezium + Kafka,
+  per-event cost lands somewhere — name it.
 
-## Readiness tier
-Currently: Service-ready (basic). Production-ready blocked by ack-before-commit
-fix and DLQ owner declaration.
+## Readiness tier impact
+Currently: Service-ready. Production-ready blocked by the ack-before-commit
+Critical and the System cost-owner gap.
 ```
 
 ### Step 5 — `/failure-mode` — what's the worst that can happen?
@@ -193,13 +198,15 @@ Before launch:
 /failure-mode against the order-fulfillment design from steps 1-4
 ```
 
-The command loads `reference/failure-modes.md` and walks the catalog against your design. Output:
+Conversational output. The command walks the failure catalog against the design and names, for each likely failure:
 
-- Top 5-7 failures most likely to bite first (duplicate delivery, hot partition by tenant, retry storm, replay side effect, schema drift, etc.).
-- For each: root cause, impact, mitigation patterns, required tests.
-- The 8 review questions answered: first failure, worst duplicate, blocked partition, slow downstream, replay safety, DLQ ownership, retry budget, who pages.
+- Root cause and the pattern that mitigates it.
+- **System-level blast radius**: which tenants are affected, which compliance reports trip, which cost lines spike, which DR plan engages, which lifecycle phase the service is in.
+- Required tests.
 
-This is where you find out that your `partitionkey: tenant_id` choice will hot-spot once one tenant grows large, and that your replay strategy will re-send confirmation emails unless you flag a `replay: true` extension.
+Plus the 8 review questions answered: first failure, worst duplicate, blocked partition, slow downstream, replay safety, DLQ ownership, retry budget, who pages.
+
+This is where you find out that `partitionkey: tenant_id` will hot-spot once one tenant grows large (with concrete tenant-isolation impact), and that your replay strategy will re-send confirmation emails unless you flag a `replay: true` extension (with the cost and customer-trust implications spelled out).
 
 ### Step 6 — `/readiness` — what tier are we at?
 
@@ -207,29 +214,46 @@ This is where you find out that your `partitionkey: tenant_id` choice will hot-s
 /readiness assess the order-fulfillment service for production launch
 ```
 
-The command loads `reference/production-guide.md`, `reference/maturity-model.md`, and `reference/checklist.md`, gathers evidence, and outputs:
+Conversational output. The command walks both technical evidence (tests, dashboards, alerts, runbooks, SLOs) and **system-concerns evidence** (ownership, tenancy, compliance class, cost owner, capacity envelope, DR posture, lifecycle plan). Missing evidence in any concern downgrades the tier.
 
-- Current tier (from the unified five-level ladder: 0 Ad hoc, 1 Pattern-aware, 2 Reliable service, 3 Production-ready, 4 Enterprise-critical).
-- Concrete gaps: missing dashboard, no DR plan, no capacity test, etc.
+Output:
+
+- Current tier (Prototype / Service-ready / Production-ready / Enterprise-critical) with the unified five-level ladder.
+- Concrete gaps: missing dashboard, no DR plan, no capacity test, no named cost owner, no compliance attestation, etc.
 - The shortest path to the next tier.
+
+If the readiness review surfaces system concerns the per-service README does not yet capture, the command suggests updating `docs/services/<slug>/README.md` so future reviews start with the new facts in place.
 
 ### Step 7 — `/ship` — go/no-go decision
 
-The big one. This command spawns three subagents in parallel — review, failure-mode, readiness — then synthesizes.
+The big one. This command spawns three subagents in parallel — review, failure-mode, readiness — then synthesizes and writes the decision to `docs/launches/<slug>-<YYYY-MM-DD>.md`.
 
 ```text
 /ship the order-fulfillment service for production launch
 ```
 
-Output:
+The launch decision file follows this structure (Summary + System concerns + the decision body + Related artifacts):
 
 ```markdown
-## Ship Decision: NO-GO
+## Summary
+- **Status**: NO-GO
+- **Date**: 2026-05-06
+- **Feature**: order-fulfillment
+- **Tier achieved**: Service-ready (cannot claim Production-ready)
+- **TL;DR**: Two Critical blockers — ack-before-commit and replay-sends-emails — must land before GO.
 
-### Tier
-Service-ready (cannot claim Production-ready)
+## System concerns
+- **Owner team**: Orders Platform
+- **Tenancy**: multi-tenant w/ tenant_id partitioning (hot-key risk noted)
+- **Compliance**: PCI-adjacent (no card data in the pipeline)
+- **Cost owner**: Orders Platform; per-event budget <TBD>
+- **Capacity**: 1k orders/sec p99; growth +30% YoY
+- **DR posture**: RPO 5 min, RTO 10 min, single-region active-passive
+- **Lifecycle**: green-field; deprecation trigger <TBD>
 
-### Blockers
+## Ship Decision
+
+### Blockers (must fix before ship)
 - consumer.go:142 — ack-before-commit (Critical, from review subagent)
 - replay sends duplicate confirmation emails (Critical, from failure-mode)
 
@@ -241,29 +265,35 @@ Service-ready (cannot claim Production-ready)
 
 ### Rollback plan
 - Trigger: DLQ depth > 100 in 5 min, or end-to-end latency p95 > 5s.
-- Procedure:
-  1. Flip feature flag `orders.fulfillment.enabled = false`.
-  2. Pause Debezium connector to halt outbox publishing.
-  3. Stop Temporal workers; in-flight workflows pause.
-  4. Drain inventory consumer (graceful shutdown).
-  5. Schema-rollback if needed: revert producer to v1 only.
+- Procedure: flip feature flag, halt CDC publisher, stop workflow workers, drain consumer, schema-rollback if needed.
 - RTO: 10 minutes from page to flag flip.
+
+## Related artifacts
+- Design: `docs/designs/order-fulfillment-design.md`
+- ADRs: `docs/adr/0001-temporal-saga.md`
+- Contracts: `docs/contracts/orders.placed.v1.md`
+- Runbooks: `docs/runbooks/dlq-orders-placed-v1.md`
+- Service index: `docs/services/order-fulfillment/README.md`
 ```
+
+`/ship` also updates the per-service README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/launches/order-fulfillment-2026-05-06.md. 2 blockers.`
 
 The fan-out gives you three independent perspectives in one pass instead of running each command serially.
 
 ## 4. Command reference
 
-| Command | When to use | Example prompt |
-| --- | --- | --- |
-| `/design` | New integration / event flow / cross-service write | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1.` |
-| `/review` | PR / diff review for production-readiness | `/review the changes in src/payments/` |
-| `/architecture` | Need a decision-ready architecture doc, RFC, ADR, or implementation plan | `/architecture write an ADR for using Temporal vs Step Functions for the refund workflow` |
-| `/contract` | Designing or reviewing an event/message contract | `/contract review payments.authorized.v1 — am I missing any CloudEvents extensions?` |
-| `/runbook` | Need a runbook for an incident type | `/runbook for DLQ triage on orders.placed.v1.dlq` |
-| `/failure-mode` | "What's the worst that could happen?" before launch | `/failure-mode for the new high-volume telemetry pipeline` |
-| `/readiness` | Map a service / change to a readiness tier | `/readiness for the inventory service before customer rollout` |
-| `/ship` | Production launch — full fan-out check | `/ship the payments service for the v2.0 release` |
+| Command | Role in the system | Writes? | Example prompt |
+| --- | --- | --- | --- |
+| `/design` | Pick patterns and boundaries; write a service design with system concerns | yes | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
+| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention | yes (3 files) | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.` |
+| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution | yes | `/architecture ADR for using a workflow engine vs choreography for the refund flow.` |
+| `/runbook` | Operational artifact for an incident type tied to a service or channel | yes | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
+| `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius | no (chat) | `/review the changes in src/payments/.` |
+| `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat) | `/failure-mode for the new high-volume telemetry pipeline.` |
+| `/readiness` | Map a service or change to a readiness tier; walk technical and system-concerns evidence | no (chat) | `/readiness for the inventory service before customer rollout.` |
+| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback | yes | `/ship the payments service for the v2.0 release.` |
+
+Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/ship`) also updates `docs/services/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
 
 The Claude Code plugin namespaces these as `/distributed-systems-patterns:design`, `:review`, etc. The bare `/design` works when the plugin is the only source for that command name; the namespaced form always works.
 
@@ -295,13 +325,9 @@ Use the distributed-systems-patterns skill to <prompt>.
 
 Or invoke a command directly — commands always activate the skill.
 
-**Non-Go codebases.** The skill defaults to Go. For Java / TypeScript / Python:
+**Language-agnostic by default.** The skill produces architectural artifacts (decisions, contracts, runbooks) in any repo regardless of language. Patterns, anti-patterns, reliability questions, and system concerns are language-neutral. When you do ask for code at a pattern boundary, the skill uses the repo's language if one is detectable; if not, it stays at language-agnostic pseudocode rather than picking one.
 
-```text
-/design [your prompt]. The repo is TypeScript with NestJS and KafkaJS.
-```
-
-The skill will load `reference/non-go-pointers.md` and produce idiomatic snippets for that stack while keeping the same patterns. Anti-patterns and reliability questions are language-agnostic.
+For non-Go ecosystems, `reference/non-go-pointers.md` lists *options* (Spring Kafka / Spring Cloud Stream for Java, KafkaJS / NestJS for TypeScript, aiokafka / confluent-kafka-python for Python) without recommending a specific one — that's a team choice.
 
 **Reading the references directly.** Every command names which reference file it loads. You can read those files directly to understand the source material:
 
@@ -310,7 +336,7 @@ cat ~/.agents/skills/distributed-systems-patterns/reference/decision-tree.md
 cat ~/.agents/skills/distributed-systems-patterns/reference/checklist.md
 ```
 
-**When the agent claims production-ready.** The skill is configured to NOT call code production-ready while reliability checklist items are open — instead it downgrades to Service-ready or Prototype and lists the gaps. If you see "production-ready" in a response, verify the checklist was actually answered.
+**When the agent claims production-ready.** The skill is configured to NOT call code production-ready while reliability checklist items OR system-concerns evidence (owner, tenancy, cost, compliance, capacity, DR, lifecycle) is open. It downgrades to Service-ready or Prototype and lists the gaps. If you see "production-ready" in a response, verify both the technical checklist and the system-concerns block were actually answered.
 
 ## What's next
 
