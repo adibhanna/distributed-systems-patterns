@@ -27,10 +27,13 @@ A green run means the skill files are valid; a red run names what's wrong.
 Cold-start example:
 
 ```text
-Design an order-placed event flow in Go. Use Postgres, Kafka, CloudEvents,
-AsyncAPI, OpenTelemetry, and a DLQ. Show the reliability checklist answers
-before code.
+Design an order-placed event flow. Postgres for the source of truth, Kafka
+for the event stream, CloudEvents envelope, AsyncAPI for the contract,
+OpenTelemetry for trace context, DLQ for poison messages. Walk the
+reliability checklist before sketching the implementation.
 ```
+
+If you want a persistent design doc instead of chat output, use `/design` with the same description — the command writes to `docs/designs/<slug>-design.md` and emits a one-line confirmation. The cold-start prompt is for thinking out loud; commands are for deliverables.
 
 Expected response shape (from `SKILL.md`'s mandatory contract):
 

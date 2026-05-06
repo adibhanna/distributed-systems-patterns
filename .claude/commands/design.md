@@ -31,10 +31,20 @@ Use this structure:
 ## Distributed-systems checklist (6 answers, when applicable)
 ## Modern realization
 ## Anti-patterns to avoid
-## Implementation outline
+## Boundary contracts (conceptual, not code)
+## File and component plan
+## Open questions
 ## Readiness tier and gaps
 ```
 
+**Strict rule: a design doc is a decision artifact, not a code artifact.** Do NOT include Go, SQL, JSON, YAML, or any implementation code blocks in this file. Specifically:
+
+- "Boundary contracts" describes channel names, event types, ordering keys, idempotency keys, retention, DLQ owner, schema compatibility mode — at the *conceptual* level. The actual schemas and AsyncAPI specs are produced by `/contract` and live under `schemas/` and `asyncapi/`. Reference them by path, do not inline them.
+- "File and component plan" is a bulleted file inventory: which source files / migrations / IaC the implementation will touch (e.g. `internal/orders/place.go`, `migrations/NNNN_add_outbox.sql`, `deploy/k8s/orders-consumer.yaml`). One line per file. No code.
+- "Open questions" lists decisions still needed, with owners and target dates. Use `<YYYY-MM-DD>` placeholders if no date is set yet.
+
+If the user wants implementation code, that is a follow-up step (regular prompt or `/architecture` for an Implementation Plan doc). If they want the actual schema and AsyncAPI files, route to `/contract`. If they want a runbook, route to `/runbook`.
+
 Then emit a one-line confirmation in chat: `Design written to docs/designs/<slug>-design.md`. Do not paste the full design back into chat unless the user asks.
 
-If the user explicitly says "show in chat" or "don't write a file", skip the file write and respond conversationally.
+If the user explicitly says "show in chat only" or "don't write a file", skip the file write and respond conversationally.
