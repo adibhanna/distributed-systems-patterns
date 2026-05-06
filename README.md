@@ -48,6 +48,58 @@ If your project doesn't fit any of these, the skill is overhead, not help.
 
 When activated on a request that doesn't meet the threshold, the skill is configured to **decline the full pipeline** and respond with a simpler answer instead. If you see a normal conversational answer for what felt like a distributed-systems question, that's the skill correctly recognizing the work is below its bar.
 
+## Quickstart
+
+Once installed (see below), describe what you're building and let the skill guide you through it:
+
+```text
+/build payment-authorization Multi-tenant SaaS, PCI-DSS scope, p99
+100 authorizations/sec, RTO 5 min. Owner: Payments Platform.
+Triggered by orders.placed.v1; emits payments.authorized.v1.
+```
+
+`/build` walks the per-feature lifecycle — design → contracts → code → tests → review → failure-mode → readiness → prelaunch — and **pauses for your approval between each step**. You reply with one of:
+
+- `continue` — proceed to the next step.
+- `revise: <changes>` — update the just-written artifact and re-pause.
+- `skip <step>` — bypass an optional step (`skip runbook`, `skip architecture`).
+- `stop` — exit; resume by re-invoking `/build` or running individual commands.
+
+### What lands on disk
+
+```
+docs/
+├── system/
+│   ├── catalog.md                       # service registry, one row per feature
+│   ├── adrs/                            # platform-wide ADRs (broker choice, mesh policy)
+│   ├── runbooks/                        # platform-wide runbooks (broker outage, region failover)
+│   └── standards/                       # conventions every feature follows
+└── features/
+    └── payment-authorization/
+        ├── README.md                    # per-feature index
+        ├── design.md                    # patterns, system concerns, file plan
+        ├── adrs/                        # feature-scoped ADRs
+        ├── contracts/                   # human-readable contract docs
+        ├── schemas/                     # Avro/Protobuf/JSON Schema
+        ├── asyncapi/                    # AsyncAPI 3.1 specs
+        ├── runbooks/                    # DLQ triage, replay, failover
+        └── launches/                    # GO/NO-GO decisions with rollback
+```
+
+Plus the actual source files at the paths named in the design's File and component plan, and tests alongside them.
+
+### Reader navigation
+
+`docs/system/catalog.md` → `docs/features/<slug>/README.md` → any artifact. Two clicks from "the system" to a specific channel's runbook. Every artifact carries a `## Related artifacts` section linking to its peers; every per-feature README has a `## Shared references` section linking to applicable platform docs.
+
+### When the threshold check kicks in
+
+If after the design lands the work looks below threshold (no patterns named, all `<TBD>` system concerns, no compliance / multi-tenancy / multi-region requirement), `/build` aborts and asks if you want to proceed anyway. The skill catches over-engineering early.
+
+### Granular fallback
+
+For re-running a single step or working outside `/build`'s linear flow, the 11 individual commands stay available. See [Slash commands](#slash-commands) below.
+
 ## Install
 
 ### Option A — Claude Code plugin marketplace (recommended)
@@ -111,20 +163,21 @@ Use these when you want to re-run a single step, fix one artifact, or do work ou
 
 For each new feature, run these in approximately this order. Skip steps that don't apply.
 
-| #     | Command         | Purpose                                                          | Writes?                                                               |
-| ----- | --------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
-| 1     | `/design`       | Pick patterns and boundaries; service-level design               | yes (`docs/features/<slug>/design.md`)                                |
-| 2     | `/contract`     | Define wire contract per channel (schemas, AsyncAPI, owner)      | yes (3 files per channel)                                             |
-| 3     | `/implement`    | Generate source code from the existing docs                      | yes (source files at paths named in design's File and component plan) |
-| 4     | `/test`         | Generate tests grounded in contracts + design                    | yes (test files alongside source)                                     |
-| 5     | `/review`       | Architectural review of the diff                                 | no (chat)                                                             |
-| 6     | `/failure-mode` | Walk failure catalog against the design                          | no (chat)                                                             |
-| 7     | `/readiness`    | Tier assessment (Prototype / Service-ready / Production-ready /Enterprise-critical) | no (chat)                                              |
-| 8     | `/prelaunch`         | Synthesize go/no-go from #5/#6/#7 + rollback plan. **Gate, not builder.** | yes (`docs/features/<slug>/launches/<date>.md`)               |
-| any   | `/runbook`      | Operational runbook for an incident type (DLQ, replay, failover) — run as many as the feature needs | yes (`docs/features/<slug>/runbooks/`)        |
-| any   | `/architecture` | ADR or RFC for a feature-specific decision (e.g. "saga orchestrator for THIS service") | yes (`docs/features/<slug>/adrs/`)                       |
+| #   | Command         | Purpose                                                                                             | Writes?                                                               |
+| --- | --------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | `/design`       | Pick patterns and boundaries; service-level design                                                  | yes (`docs/features/<slug>/design.md`)                                |
+| 2   | `/contract`     | Define wire contract per channel (schemas, AsyncAPI, owner)                                         | yes (3 files per channel)                                             |
+| 3   | `/implement`    | Generate source code from the existing docs                                                         | yes (source files at paths named in design's File and component plan) |
+| 4   | `/test`         | Generate tests grounded in contracts + design                                                       | yes (test files alongside source)                                     |
+| 5   | `/review`       | Architectural review of the diff                                                                    | no (chat)                                                             |
+| 6   | `/failure-mode` | Walk failure catalog against the design                                                             | no (chat)                                                             |
+| 7   | `/readiness`    | Tier assessment (Prototype / Service-ready / Production-ready /Enterprise-critical)                 | no (chat)                                                             |
+| 8   | `/prelaunch`    | Synthesize go/no-go from #5/#6/#7 + rollback plan. **Gate, not builder.**                           | yes (`docs/features/<slug>/launches/<date>.md`)                       |
+| any | `/runbook`      | Operational runbook for an incident type (DLQ, replay, failover) — run as many as the feature needs | yes (`docs/features/<slug>/runbooks/`)                                |
+| any | `/architecture` | ADR or RFC for a feature-specific decision (e.g. "saga orchestrator for THIS service")              | yes (`docs/features/<slug>/adrs/`)                                    |
 
 The order matters for some pairs:
+
 - `/contract` must run before `/implement` (the schemas determine struct shapes).
 - `/implement` must run before `/test` (tests need code to test against).
 - `/review`, `/failure-mode`, `/readiness` run before `/prelaunch` (`/prelaunch` synthesizes their reports).
@@ -135,11 +188,11 @@ The rest is flexible.
 
 These commands write to `docs/system/` and run when cross-feature decisions, conventions, or incidents need to be captured.
 
-| Command                       | When to use                                                                                                   | Writes?                                  |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `/architecture` (platform)    | Cross-feature decisions: broker choice, mesh policy, schema-registry vendor, multi-region strategy            | yes (`docs/system/adrs/`)                |
-| `/standard`                   | Once a rule appears in 3+ feature designs (e.g. "all services emit OpenTelemetry traces"), promote it         | yes (`docs/system/standards/<topic>.md`) |
-| `/runbook` `--scope=platform` | Cross-feature incidents: broker outage, schema-registry rollback, region-wide failover                        | yes (`docs/system/runbooks/`)            |
+| Command                       | When to use                                                                                           | Writes?                                  |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `/architecture` (platform)    | Cross-feature decisions: broker choice, mesh policy, schema-registry vendor, multi-region strategy    | yes (`docs/system/adrs/`)                |
+| `/standard`                   | Once a rule appears in 3+ feature designs (e.g. "all services emit OpenTelemetry traces"), promote it | yes (`docs/system/standards/<topic>.md`) |
+| `/runbook` `--scope=platform` | Cross-feature incidents: broker outage, schema-registry rollback, region-wide failover                | yes (`docs/system/runbooks/`)            |
 
 ### Typical run for one feature
 
@@ -267,15 +320,18 @@ It combines modern integration, messaging, event-driven architecture, workflow, 
 
 When activated, the agent must:
 
-1. Name the integration, distributed-systems, resilience, workflow, and architecture pattern(s) in play.
-2. Answer the 8 reliability questions before coding or approving code.
-3. Answer distributed-systems questions when the risk is service boundaries, scale, consistency, resilience, multi-region, or enterprise operations.
-4. Flag anti-patterns such as dual-write, missing idempotency, unbounded retries, ack-before-commit, DLQs with no owner, distributed monoliths, retry storms, and unbounded queues.
-5. Map the pattern to modern tooling.
-6. Default to architectural artifacts (decisions, contracts, runbooks); show code only when explicitly asked, in the repo's language, library-agnostic where possible.
-7. Add pattern comments in integration code, for example `// Pattern: Transactional Outbox - avoids dual-write`.
-8. Use the review checklist before calling a change production-ready.
-9. Maintain a per-feature index at `docs/features/<slug>/README.md` and a system catalog at `docs/system/catalog.md`. Every artifact updates both, so the system stays navigable.
+1. **Decline below-threshold requests.** If the work is single-process, single-team, prototype, or doesn't introduce durable infrastructure, refuse the full pipeline and answer simply.
+2. Name the integration, distributed-systems, resilience, workflow, and architecture pattern(s) in play.
+3. Answer the 8-question reliability checklist before producing decisions or accepting code.
+4. Answer the distributed-systems checklist when the risk is service boundaries, scale, consistency, resilience, multi-region, or enterprise operations.
+5. Flag anti-patterns: dual-write, missing idempotency, unbounded retries, ack-before-commit, DLQs with no owner, distributed monoliths, retry storms, unbounded queues.
+6. Recommend tool **categories** (a Kafka client, a CDC tool) before specific packages. Specific package picks stay with the team.
+7. Default outputs are architectural artifacts (decisions, contracts, runbooks); generate code only when asked (typically through `/implement`).
+8. Annotate pattern boundaries in code with single comments at the enforcement point (outbox INSERT, dedup check, retry classifier).
+9. Use the review checklist before calling a change production-ready; downgrade to a lower tier when evidence is missing.
+10. **Keep the system navigable.** Every artifact updates `docs/features/<slug>/README.md` (per-feature index) and `docs/system/catalog.md` (top-level service registry).
+11. **Reference shared knowledge before restating.** Glob `docs/system/standards/`, `docs/system/glossary.md`, etc. before writing feature artifacts; link rather than copy-paste.
+12. **Orchestrate with `/build`.** When the user describes a new feature, walk the lifecycle (`/design` → `/contract` → `/implement` → `/test` → `/review` → `/failure-mode` → `/readiness` → `/prelaunch`) with approval gates between steps. The user replies `continue` / `revise: <changes>` / `skip <step>` / `stop` to control the flow.
 
 ## Layout
 
