@@ -10,10 +10,8 @@ A portable AI-agent skill for designing, implementing, documenting, and reviewin
 
 Clone the repo and run the installer. It detects your tools (Claude Code, Codex, OpenCode, Continue) and creates the right symlinks idempotently.
 
-<!-- Replace <your-username> with the GitHub user/org you push this repo to. -->
-
 ```bash
-git clone https://github.com/<your-username>/distributed-systems-patterns ~/.agents/skills/distributed-systems-patterns
+git clone https://github.com/adibhanna/distributed-systems-patterns ~/.agents/skills/distributed-systems-patterns
 ~/.agents/skills/distributed-systems-patterns/scripts/install.sh
 ```
 
