@@ -1,0 +1,11 @@
+# macOS
+.DS_Store
+
+# Editor scratch
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Eval output
+.eval-output/

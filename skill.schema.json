@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/agent-skills/distributed-systems-patterns/skill.schema.json",
+  "title": "SKILL.md frontmatter",
+  "description": "Validates the YAML frontmatter at the top of SKILL.md.",
+  "type": "object",
+  "required": ["name", "description"],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Skill identifier in kebab-case."
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1024,
+      "description": "Short description used by agents to decide when to load the skill."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)(?:-[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$",
+      "description": "Semantic version string."
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "license": {
+      "type": "string"
+    }
+  }
+}

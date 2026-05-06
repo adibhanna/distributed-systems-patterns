@@ -1,0 +1,8 @@
+interface:
+  display_name: "Distributed Systems Patterns"
+  short_description: "Distributed systems, messaging, and resilience"
+  brand_color: "#2563EB"
+  default_prompt: "Use $distributed-systems-patterns to design or review distributed systems, messaging, scaling, and resilience code with named patterns and Go examples."
+
+policy:
+  allow_implicit_invocation: true
