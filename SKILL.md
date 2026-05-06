@@ -15,6 +15,14 @@ Scope covers integration, messaging, event-driven architecture, workflows, resil
 
 The skill is technology-neutral. Kafka topics, SQS queues, Temporal workflows, EventBridge rules, Kubernetes autoscalers, Envoy circuit breakers, Debezium outbox SMTs, CloudEvents envelopes, and AsyncAPI contracts are modern implementations of the same pattern-and-forces mindset. Specific package picks (which Kafka client, which ORM) are team decisions; the skill recommends categories and lists options with trade-offs.
 
+## Who this skill is for
+
+Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. The artifacts (design docs, ADRs, contracts, runbooks, launch decisions) are valuable when multiple teams or services must coordinate; they are overhead when one engineer can hold the whole system in their head.
+
+**Not for**: single-process apps, single-function utilities, frontend-only work, quick local refactors, ETL jobs without service coordination, beginner pattern questions ("what is a queue?"), or pre-MVP prototypes that don't yet have users or operational costs.
+
+**Threshold for invoking the full skill**: at least two services or two teams must coordinate; or the work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model; or the request explicitly asks for an ADR/RFC/runbook/launch decision. If none of these apply, decline the full pipeline and respond directly with a simpler answer; tell the user the skill would be overkill for their case.
+
 This skill is an operating procedure. Load only the reference file needed:
 
 **Architectural and decision references** (load when designing, reviewing, or documenting):

@@ -2,6 +2,18 @@
 
 A walkthrough of `distributed-systems-patterns` from install to shipping a real change. Uses the order-fulfillment scenario throughout so the commands chain naturally.
 
+## 0. Is this skill for your problem?
+
+The skill is for **distributed-systems work at scale**. Use it when:
+
+- Two or more services or teams must coordinate.
+- The work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model.
+- You need durable decision artifacts (ADRs, RFCs, runbooks, launch decisions) that outlast individual code changes.
+
+**Skip the skill** for single-process apps, frontend-only work, quick refactors, beginner pattern questions, ETL without service coordination, or pre-MVP prototypes. For those, a regular prompt without slash commands is faster and produces less ceremony.
+
+This walkthrough builds an order-fulfillment saga across four downstream services — well above the threshold. Adapt the scenario to your real system if you have one in mind; if not, follow it as-is.
+
 ## 1. Verify the install
 
 After running `scripts/install.sh`, check that your tool found the skill:

@@ -6,6 +6,21 @@
 
 A connected system for designing distributed systems **at scale**. Produces design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions that link into a per-service index and a system-level catalog. Covers integration patterns plus the layer beyond code: team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, disaster recovery, and lifecycle. Default outputs are architectural artifacts; specific library choices stay with the team.
 
+## Who this is for
+
+Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. The artifacts the skill produces (design docs, ADRs, contracts, runbooks, launch decisions) are valuable when multiple teams or services must coordinate.
+
+**Not for**:
+
+- Single-process applications or single-function utilities
+- Frontend-only work
+- Quick local refactors or single-function code
+- ETL jobs or scripts without service coordination
+- Beginner-level pattern questions ("what is a queue?")
+- Pre-MVP prototypes that don't yet have users or operational costs
+
+**Threshold for invoking the full pipeline**: at least two services or two teams must coordinate; or the work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model; or the request explicitly asks for an ADR / RFC / runbook / launch decision. If none of these apply, this skill is overkill — a regular prompt without the slash commands is faster and clearer.
+
 ## Install
 
 ### Option A — Claude Code plugin marketplace (recommended)
