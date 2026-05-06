@@ -45,7 +45,7 @@ OpenTelemetry for trace context, DLQ for poison messages. Walk the
 reliability checklist before sketching the implementation.
 ```
 
-If you want a persistent design doc instead of chat output, use `/design` with the same description — the command writes to `docs/designs/<slug>-design.md` and emits a one-line confirmation. The cold-start prompt is for thinking out loud; commands are for deliverables.
+If you want a persistent design doc instead of chat output, use `/design` with the same description — the command writes to `docs/features/<slug>/design.md` and emits a one-line confirmation. The cold-start prompt is for thinking out loud; commands are for deliverables.
 
 Expected response shape (from `SKILL.md`'s mandatory contract):
 
@@ -78,18 +78,18 @@ Use the distributed-systems-patterns skill: design an order-placed event flow in
 
 ### A connected system, not eight standalone commands
 
-Every artifact the skill writes lands in two places: the conventional path (`docs/designs/...`, `docs/contracts/...`, etc.) AND the per-service index at `docs/services/<slug>/README.md`. The per-service index aggregates every artifact for one service plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. The system catalog at `docs/system/catalog.md` indexes every service.
+Every artifact the skill writes lands inside one feature folder: `docs/features/<slug>/`. That folder holds the design, ADRs, contracts, schemas, AsyncAPI specs, runbooks, launches, and a README index — all as siblings. The per-feature README aggregates every artifact for one feature plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. The system catalog at `docs/system/catalog.md` indexes every feature; platform-wide ADRs live next to it under `docs/system/adrs/`.
 
 Reader navigation:
 
 ```text
 docs/system/catalog.md
-  -> docs/services/<slug>/README.md
-    -> docs/designs/<slug>-design.md
-       docs/contracts/<channel>.md
-       docs/runbooks/<incident>.md
-       docs/adr/NNNN-<slug>.md
-       docs/launches/<slug>-<date>.md
+  -> docs/features/<slug>/README.md
+    -> docs/features/<slug>/design.md
+       docs/features/<slug>/adrs/NNNN-<title>.md
+       docs/features/<slug>/contracts/<channel>.md
+       docs/features/<slug>/runbooks/<incident>.md
+       docs/features/<slug>/launches/<date>.md
 ```
 
 Two clicks from "the system" to "this channel's runbook".
@@ -118,10 +118,10 @@ Orders Platform team. Multi-tenant with tenant_id partitioning. Capacity:
 
 The command:
 
-- Writes `docs/designs/order-fulfillment-design.md` with `## Summary` (status, date, TL;DR), `## System concerns` (owner, tenancy, compliance, cost, capacity, DR, lifecycle — `<TBD>` for unknowns), pattern map, 8-question reliability checklist, distributed-systems checklist, modern-realization mapping (a CDC tool, a Kafka-compatible broker, a workflow engine — categories, not specific packages unless you ask), boundary contracts at the conceptual level, file/component plan, open questions, readiness tier.
-- Creates or updates `docs/services/order-fulfillment/README.md` (per-service index) with the design link and the system-concerns block.
-- Creates or updates `docs/system/catalog.md` (top-level registry) with one row for the service.
-- Emits a one-line confirmation in chat: `Design written to docs/designs/order-fulfillment-design.md` plus the updated index/catalog paths.
+- Writes `docs/features/order-fulfillment/design.md` with `## Summary` (status, date, TL;DR), `## System concerns` (owner, tenancy, compliance, cost, capacity, DR, lifecycle — `<TBD>` for unknowns), pattern map, 8-question reliability checklist, distributed-systems checklist, modern-realization mapping (a CDC tool, a Kafka-compatible broker, a workflow engine — categories, not specific packages unless you ask), boundary contracts at the conceptual level, file/component plan, open questions, readiness tier.
+- Creates or updates `docs/features/order-fulfillment/README.md` (per-feature index) with the design link and the system-concerns block.
+- Creates or updates `docs/system/catalog.md` (top-level registry) with one row for the feature.
+- Emits a one-line confirmation in chat: `Design written to docs/features/order-fulfillment/design.md` plus the updated index/catalog paths.
 
 ### Step 2 — `/contract` — define `orders.placed.v1`
 
@@ -134,15 +134,15 @@ notifications-service. Required fields: order_id, customer_id, total_cents,
 items[]. Need per-order ordering.
 ```
 
-The command writes three files:
+The command writes three files, all under the producer feature's folder:
 
-- `schemas/orders.placed.v1.json` — payload schema (Avro/Protobuf/JSON Schema).
-- `asyncapi/orders.placed.v1.yaml` — AsyncAPI 3.1 channel + operation + message.
-- `docs/contracts/orders.placed.v1.md` — human-readable contract with `## Summary` (status, date, channel, owner, TL;DR), `## System concerns` (compliance class, retention, cost), CloudEvents 1.0.2 envelope example, compatibility mode (BACKWARD by default), versioning policy (when v2 is required), DLQ owner, replay/redrive policy, and `## Related artifacts` linking back to the design.
+- `docs/features/order-fulfillment/schemas/orders.placed.v1.json` — payload schema (Avro/Protobuf/JSON Schema).
+- `docs/features/order-fulfillment/asyncapi/orders.placed.v1.yaml` — AsyncAPI 3.1 channel + operation + message.
+- `docs/features/order-fulfillment/contracts/orders.placed.v1.md` — human-readable contract with `## Summary` (status, date, channel, owner, TL;DR), `## System concerns` (compliance class, retention, cost), CloudEvents 1.0.2 envelope example, compatibility mode (BACKWARD by default), versioning policy (when v2 is required), DLQ owner, replay/redrive policy, and `## Related artifacts` linking back to the design (sibling path: `../design.md`).
 
-It also updates `docs/services/order-fulfillment/README.md` (adds the channel to "Channels owned" and the contract to "Artifacts") and `docs/system/catalog.md` (refreshes the service row).
+It also updates `docs/features/order-fulfillment/README.md` (adds the channel to "Channels owned" and the contract to "Artifacts") and `docs/system/catalog.md` (refreshes the feature row).
 
-Confirmation in chat: `Contract orders.placed.v1 written: schemas/..., asyncapi/..., docs/contracts/...`
+Confirmation in chat: `Contract orders.placed.v1 written under docs/features/order-fulfillment/{schemas,asyncapi,contracts}/`
 
 ### Step 3 — Implementation lives outside the skill
 
@@ -174,7 +174,7 @@ This is **architectural review**, not line-by-line code review. The command iden
 - Anti-patterns: dual-write, ack-before-commit, unbounded retry, retry storm, distributed monolith, missing trace context.
 - Readiness-tier impact: does the change move the service up, down, or sideways?
 
-Findings categorize as **Critical** (launch-blocking anti-pattern or contract break), **Important** (reliability regression or contract weakening), **Suggestion** (architecture tightening), or **System** (touches ownership, tenancy, compliance, cost, capacity, DR, or lifecycle). Conversational output — not a file. If material new System facts emerge, the command suggests updating `docs/services/<slug>/README.md`.
+Findings categorize as **Critical** (launch-blocking anti-pattern or contract break), **Important** (reliability regression or contract weakening), **Suggestion** (architecture tightening), or **System** (touches ownership, tenancy, compliance, cost, capacity, DR, or lifecycle). Conversational output — not a file. If material new System facts emerge, the command suggests updating `docs/features/<slug>/README.md`.
 
 Output shape:
 
@@ -194,7 +194,7 @@ Output shape:
 
 ### System
 - The inventory service has no listed cost owner in
-  docs/services/order-fulfillment/README.md. With outbox + Debezium + Kafka,
+  docs/features/order-fulfillment/README.md. With outbox + Debezium + Kafka,
   per-event cost lands somewhere — name it.
 
 ## Readiness tier impact
@@ -234,11 +234,11 @@ Output:
 - Concrete gaps: missing dashboard, no DR plan, no capacity test, no named cost owner, no compliance attestation, etc.
 - The shortest path to the next tier.
 
-If the readiness review surfaces system concerns the per-service README does not yet capture, the command suggests updating `docs/services/<slug>/README.md` so future reviews start with the new facts in place.
+If the readiness review surfaces system concerns the per-feature README does not yet capture, the command suggests updating `docs/features/<slug>/README.md` so future reviews start with the new facts in place.
 
 ### Step 7 — `/ship` — go/no-go decision
 
-The big one. This command spawns three subagents in parallel — review, failure-mode, readiness — then synthesizes and writes the decision to `docs/launches/<slug>-<YYYY-MM-DD>.md`.
+The big one. This command spawns three subagents in parallel — review, failure-mode, readiness — then synthesizes and writes the decision to `docs/features/<slug>/launches/<YYYY-MM-DD>.md`.
 
 ```text
 /ship the order-fulfillment service for production launch
@@ -281,14 +281,14 @@ The launch decision file follows this structure (Summary + System concerns + the
 - RTO: 10 minutes from page to flag flip.
 
 ## Related artifacts
-- Design: `docs/designs/order-fulfillment-design.md`
-- ADRs: `docs/adr/0001-temporal-saga.md`
-- Contracts: `docs/contracts/orders.placed.v1.md`
-- Runbooks: `docs/runbooks/dlq-orders-placed-v1.md`
-- Service index: `docs/services/order-fulfillment/README.md`
+- Design: `../design.md`
+- ADRs: `../adrs/0001-temporal-saga.md`
+- Contracts: `../contracts/orders.placed.v1.md`
+- Runbooks: `../runbooks/dlq-orders-placed-v1.md`
+- Feature index: `../README.md`
 ```
 
-`/ship` also updates the per-service README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/launches/order-fulfillment-2026-05-06.md. 2 blockers.`
+`/ship` also updates the per-feature README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/features/order-fulfillment/launches/2026-05-06.md. 2 blockers.`
 
 The fan-out gives you three independent perspectives in one pass instead of running each command serially.
 
@@ -296,16 +296,16 @@ The fan-out gives you three independent perspectives in one pass instead of runn
 
 | Command | Role in the system | Writes? | Example prompt |
 | --- | --- | --- | --- |
-| `/design` | Pick patterns and boundaries; write a service design with system concerns | yes | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
-| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention | yes (3 files) | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.` |
-| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution | yes | `/architecture ADR for using a workflow engine vs choreography for the refund flow.` |
-| `/runbook` | Operational artifact for an incident type tied to a service or channel | yes | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
+| `/design` | Pick patterns and boundaries; write a service design with system concerns | yes (under `docs/features/<slug>/`) | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
+| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention | yes (3 files under `docs/features/<slug>/`) | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.` |
+| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution | yes (under `docs/features/<slug>/adrs/` or `docs/system/adrs/`) | `/architecture ADR for using a workflow engine vs choreography for the refund flow.` |
+| `/runbook` | Operational artifact for an incident type tied to a service or channel | yes (under `docs/features/<slug>/runbooks/`) | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
 | `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius | no (chat) | `/review the changes in src/payments/.` |
 | `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat) | `/failure-mode for the new high-volume telemetry pipeline.` |
 | `/readiness` | Map a service or change to a readiness tier; walk technical and system-concerns evidence | no (chat) | `/readiness for the inventory service before customer rollout.` |
-| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback | yes | `/ship the payments service for the v2.0 release.` |
+| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback | yes (under `docs/features/<slug>/launches/`) | `/ship the payments service for the v2.0 release.` |
 
-Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/ship`) also updates `docs/services/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
+Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/ship`) also updates `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
 
 The Claude Code plugin namespaces these as `/distributed-systems-patterns:design`, `:review`, etc. The bare `/design` works when the plugin is the only source for that command name; the namespaced form always works.
 

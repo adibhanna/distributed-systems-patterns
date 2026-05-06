@@ -4,7 +4,7 @@
   <img src="./logo.jpg" alt="Distributed Systems Patterns logo" width="600">
 </p>
 
-A connected system for designing distributed systems **at scale**. Produces design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions that link into a per-service index and a system-level catalog. Covers integration patterns plus the layer beyond code: team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, disaster recovery, and lifecycle. Default outputs are architectural artifacts; specific library choices stay with the team.
+A connected system for designing distributed systems **at scale**. Produces design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions that link into a per-feature index and a system-level catalog. Covers integration patterns plus the layer beyond code: team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, disaster recovery, and lifecycle. Default outputs are architectural artifacts; specific library choices stay with the team.
 
 ## Who this is for
 
@@ -72,11 +72,30 @@ For a full walkthrough — install verification, a cold-start prompt, and the or
 
 The skill produces three layers of artifacts that link together:
 
-1. **Per-artifact files** at conventional paths (`docs/designs/`, `docs/adr/`, `docs/contracts/`, `docs/runbooks/`, `docs/launches/`, `schemas/`, `asyncapi/`).
-2. **Per-service indexes** at `docs/services/<slug>/README.md`. Aggregates every artifact for one service plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. Auto-updated by every command.
-3. **A system catalog** at `docs/system/catalog.md`. One row per service: owner, tier, SLO, compliance, last reviewed. Auto-updated whenever a per-service README changes.
+1. **Per-feature folders** at `docs/features/<slug>/`. Each feature owns one folder containing all its artifacts: `design.md`, `README.md`, `adrs/`, `contracts/`, `schemas/`, `asyncapi/`, `runbooks/`, `launches/`. Cross-links inside a feature are sibling/child paths, not `../../...` traversals.
+2. **A per-feature index** at `docs/features/<slug>/README.md`. Aggregates every artifact for one feature plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. Auto-updated by every command.
+3. **A system catalog** at `docs/system/catalog.md`. One row per feature: owner, tier, SLO, compliance, last reviewed. Auto-updated whenever a per-feature README changes. Platform-wide ADRs live alongside it under `docs/system/adrs/`.
 
-Reader navigation: `docs/system/catalog.md` -> `docs/services/<slug>/README.md` -> a specific artifact. Two clicks from "the system" to "this consumer's DLQ runbook".
+Reader navigation:
+
+```text
+docs/system/catalog.md
+  -> docs/features/<slug>/README.md
+    -> docs/features/<slug>/design.md
+       docs/features/<slug>/adrs/NNNN-<title>.md
+       docs/features/<slug>/contracts/<channel>.md
+       docs/features/<slug>/runbooks/<incident>.md
+       docs/features/<slug>/launches/<date>.md
+```
+
+Two clicks from "the system" to "this consumer's DLQ runbook".
+
+### Path conventions
+
+- **Slug**: feature/service identifier in kebab-case (e.g. `order-fulfillment`). All artifacts for one feature live under `docs/features/<slug>/`.
+- **Channel**: event/message channel name in dotted form (e.g. `orders.placed.v1`). Used as the filename for contracts, schemas, AsyncAPI specs.
+- **ADR scope**: feature-scoped ADRs (most ADRs, e.g. saga orchestrator for THIS feature) live at `docs/features/<slug>/adrs/`. Platform-wide ADRs (broker choice, mesh policy) live at `docs/system/adrs/`. The `/architecture` command asks which when ambiguous.
+- **NNNN numbering**: per-folder. Feature-scoped ADR-0001 in one feature does not collide with feature-scoped ADR-0001 in another. Platform-wide ADRs use a separate sequence under `docs/system/adrs/`.
 
 ### Lifecycle
 
@@ -96,7 +115,7 @@ flowchart LR
     K --> A
 ```
 
-Every command updates the per-service README and the system catalog. The lifecycle is a loop, not a line.
+Every command updates the per-feature README and the system catalog. The lifecycle is a loop, not a line.
 
 ### "Everything beyond code"
 
@@ -133,7 +152,7 @@ When activated, the agent must:
 6. Default to architectural artifacts (decisions, contracts, runbooks); show code only when explicitly asked, in the repo's language, library-agnostic where possible.
 7. Add pattern comments in integration code, for example `// Pattern: Transactional Outbox - avoids dual-write`.
 8. Use the review checklist before calling a change production-ready.
-9. Maintain a per-service index at `docs/services/<slug>/README.md` and a system catalog at `docs/system/catalog.md`. Every artifact updates both, so the system stays navigable.
+9. Maintain a per-feature index at `docs/features/<slug>/README.md` and a system catalog at `docs/system/catalog.md`. Every artifact updates both, so the system stays navigable.
 
 ## Layout
 
@@ -179,19 +198,29 @@ skill/
 │   ├── testing-strategy.md          # contract/replay/failure/load tests
 │   └── webhook-security-go.md       # Go webhook signature verification
 ├── scripts/
-│   └── validate_skill.sh            # local package validation
+│   ├── validate_skill.sh            # local package validation
+│   └── migrate-layout.sh            # v0.2 -> v0.3 layout migration
 └── docs/
     ├── system/
-    │   └── catalog.md                 # system-level service registry
-    ├── services/
-    │   └── <slug>/
-    │       └── README.md              # per-service index (auto-updated)
-    ├── designs/<slug>-design.md
-    ├── architecture/<slug>-<doctype>.md
-    ├── adr/NNNN-<slug>.md
-    ├── contracts/<channel>.md
-    ├── runbooks/<incident>.md
-    ├── launches/<slug>-<date>.md
+    │   ├── catalog.md                 # system-level feature registry
+    │   └── adrs/                      # platform-wide ADRs
+    │       └── NNNN-<title>.md
+    ├── features/
+    │   └── <slug>/                    # one folder per feature/service
+    │       ├── README.md              # per-feature index (auto-updated)
+    │       ├── design.md
+    │       ├── adrs/                  # feature-scoped ADRs
+    │       │   └── NNNN-<title>.md
+    │       ├── contracts/
+    │       │   └── <channel>.md
+    │       ├── schemas/
+    │       │   └── <channel>.<ext>
+    │       ├── asyncapi/
+    │       │   └── <channel>.yaml
+    │       ├── runbooks/
+    │       │   └── <incident>.md
+    │       └── launches/
+    │           └── <date>.md
     ├── any-agent-setup.md
     ├── claude-code-setup.md
     ├── codex-setup.md

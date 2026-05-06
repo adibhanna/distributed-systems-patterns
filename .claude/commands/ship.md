@@ -25,13 +25,13 @@ Each subagent gets its own context window and cannot spawn other subagents. If `
 
 ## Phase C - Decision and rollback
 
-Before writing, Glob `docs/designs/*<slug>*.md`, `docs/architecture/*<slug>*.md`, `docs/adr/*<slug>*.md`, `docs/contracts/*<slug>*.md`, `docs/runbooks/*<slug>*.md` and populate `## Related artifacts` with matches; for missing peers, list the conventional path with `(not yet written)`.
+Before writing, Glob `docs/features/<slug>/**` to enumerate peer artifacts (design, ADRs, contracts, runbooks, prior launches) and populate `## Related artifacts` with matches; for missing peers, list the conventional path with `(not yet written)`.
 
-After writing the launch decision, **update the per-service index and system catalog** in the same turn:
-- `docs/services/<slug>/README.md` - per-service entry point. Append/update `Artifacts.Launch decisions` with a link to the new launch doc, and update `## Service info`: bump `Tier` to the achieved tier (or downgrade if NO-GO) and `Last reviewed` to the launch date. If absent, create from SKILL.md item 16.
-- `docs/system/catalog.md` - system-level service registry. Append/update the row for `<slug>` with new tier and last-reviewed date. If absent, create from SKILL.md item 17.
+After writing the launch decision, **update the per-feature index and system catalog** in the same turn:
+- `docs/features/<slug>/README.md` - per-feature entry point. Append `launches/<YYYY-MM-DD>.md` to `## Artifacts.Launch decisions` with a link to the new launch doc, and update `## Service info`: bump `Tier` to the achieved tier (or downgrade if NO-GO) and `Last reviewed` to the launch date. If absent, create from SKILL.md item 16.
+- `docs/system/catalog.md` - system-level feature registry. Append/update the row for `<slug>` with new tier and last-reviewed date. If absent, create from SKILL.md item 17.
 
-**Write the decision to `docs/launches/<feature-slug>-<YYYY-MM-DD>.md`** (today's date in ISO format). Create `docs/launches/` if it does not exist. Use this structure:
+**Write the decision to `docs/features/<slug>/launches/<YYYY-MM-DD>.md`** (today's date in ISO format; the slug is the folder, the filename is just the date). Create `docs/features/<slug>/launches/` if it does not exist. Use this structure:
 
 ```markdown
 ## Summary
@@ -63,14 +63,14 @@ After writing the launch decision, **update the per-service index and system cat
 - Recovery time objective: [target]
 
 ## Related artifacts
-- Design: `docs/designs/<slug>-design.md`; ADRs: `docs/adr/*<slug>*.md`; Contracts: `docs/contracts/`; Runbooks: `docs/runbooks/`.
+- Design: `../design.md`; ADRs: `../adrs/`; Contracts: `../contracts/`; Runbooks: `../runbooks/`; README: `../README.md`. (Paths relative to this launch doc.)
 - Failure-mode notes: inline above (capture key findings in Acknowledged risks if shipping despite them).
 
 ### Subagent reports (full)
 - [Review report] / [Failure-mode report] / [Readiness report]
 ```
 
-Emit a one-line confirmation: `Ship decision: <GO|NO-GO>. Written to docs/launches/<slug>-<date>.md.` plus blocker count if NO-GO.
+Emit a one-line confirmation: `Ship decision: <GO|NO-GO>. Written to docs/features/<slug>/launches/<date>.md.` plus blocker count if NO-GO.
 
 ## Rules
 

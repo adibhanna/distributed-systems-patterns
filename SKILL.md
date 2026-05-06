@@ -66,7 +66,7 @@ When this skill activates, every answer must include or perform these steps:
 2. Run the 8-question reliability checklist before writing or accepting code.
 3. Flag anti-patterns directly, especially dual-write, missing idempotency, unbounded retries, and missing DLQ ownership.
 4. Cite the modern tool or protocol that realizes the pattern.
-5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `schemas/` and `asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
+5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
 6. **When code is shown, annotate the pattern at the boundary** with a single comment line such as `// Pattern: Idempotent Receiver - dedupe by event id`. Do not annotate every line; the goal is to make the pattern visible at the point it is enforced.
 7. **Recommend tool categories, not specific packages, by default.** Say "a Kafka-compatible broker" or "a CDC tool" before naming Kafka, Redpanda, or Debezium. Specific package recommendations (which Kafka client, which ORM, which HTTP framework) are team decisions; offer them only if the user asks "which library should I use?" In that case, list 2-3 options with the trade-offs that distinguish them, and refuse to pick on the team's behalf.
 8. Map readiness to the tier defined in `reference/production-guide.md` (Prototype → Service-ready → Production-ready → Enterprise-critical). Do not call code "production-ready" or "enterprise-critical" while reliability or distributed-systems checklist items are unanswered; downgrade to "service-ready" or "prototype" as appropriate and state the gaps.
@@ -74,25 +74,36 @@ When this skill activates, every answer must include or perform these steps:
 10. If the risk is scale, consistency, resilience, service boundaries, multi-region, or enterprise operations, load `reference/distributed-systems-guide.md` and name the distributed-systems pattern(s), not only the messaging pattern(s).
 11. If the user asks for an architecture doc, design doc, RFC, ADR, technical plan, migration plan, or decision reference, load `reference/architecture-documentation.md` and produce a decision-ready document with patterns, alternatives, trade-offs, rollout, verification, and operations.
 12. For production-readiness, launch, incident, security, or testing requests, load the specific guide: `security-compliance.md`, `testing-strategy.md`, `operational-runbooks.md`, `failure-modes.md`, or `maturity-model.md`.
-13. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using a stable path: `docs/designs/<slug>-design.md`, `docs/adr/NNNN-<slug>.md`, `docs/architecture/<slug>-<doctype>.md`, `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`, `docs/runbooks/<slug>.md`, or `docs/launches/<slug>-<YYYY-MM-DD>.md`. After writing, emit a one-line confirmation naming the path - do not paste the full document back into chat. Skip the file write only on an explicit opt-out signal: `show in chat only`, `don't write a file`, `chat only`, or `no file`. The bare verb "show" or phrases like "show me X before Y" are about response *ordering*, not output medium, and must not trigger the escape hatch. Conversational analyses (review findings, readiness assessment, failure-mode discussion) stay in chat by default.
+13. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using one of the canonical paths under the per-feature folder layout:
+    - Design doc -> `docs/features/<slug>/design.md`
+    - ADR (feature-scoped, default) -> `docs/features/<slug>/adrs/NNNN-<title>.md`
+    - ADR (platform-wide) -> `docs/system/adrs/NNNN-<title>.md`
+    - RFC / Architecture Overview / Implementation Plan / Migration Plan / Production Readiness Review -> `docs/features/<slug>/architecture-<doctype>.md` (or `docs/system/architecture-<doctype>.md` for platform-wide)
+    - Contract -> `docs/features/<slug>/contracts/<channel>.md` plus `docs/features/<slug>/schemas/<channel>.<ext>` plus `docs/features/<slug>/asyncapi/<channel>.yaml`
+    - Runbook -> `docs/features/<slug>/runbooks/<incident>.md`
+    - Launch decision -> `docs/features/<slug>/launches/<YYYY-MM-DD>.md`
+
+    The slug derives from the feature/service the artifact belongs to. ADR numbering is per-folder; a feature-scoped ADR-0001 in one feature does not collide with a feature-scoped ADR-0001 in another. Platform-wide ADRs use a separate number sequence under `docs/system/adrs/`.
+
+    After writing, emit a one-line confirmation naming the path - do not paste the full document back into chat. Skip the file write only on an explicit opt-out signal: `show in chat only`, `don't write a file`, `chat only`, or `no file`. The bare verb "show" or phrases like "show me X before Y" are about response *ordering*, not output medium, and must not trigger the escape hatch. Conversational analyses (review findings, readiness assessment, failure-mode discussion) stay in chat by default.
 
     Every deliverable artifact must include a **`## System concerns`** section near the top (after Summary, before the topic-specific structure) covering the layer beyond code: ownership/Conway boundary, tenancy, cost owner, compliance class, capacity expectation, DR posture, and lifecycle/retirement plan. Leave any field as `<TBD>` if unknown rather than omitting it - the placeholder forces the question to be asked.
 
-14. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `schemas/` and `asyncapi/` produced by `/contract`. Runbooks belong in `docs/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
+14. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/` produced by `/contract`. Runbooks belong in `docs/features/<slug>/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
 
 15. **Cross-link artifacts and include summary metadata.** Every file the skill writes (design, ADR, RFC, contract, runbook, launch decision) must include:
 
     a. A `## Summary` block at the top with: `Status:` (Draft | Proposed | Accepted | Superseded | Retired), `Date:` (`<YYYY-MM-DD>`), and a 1-2 sentence TL;DR.
 
     b. A `## Related artifacts` section at the bottom that lists peer docs for the same feature/slug. Before writing, glob the repo for these patterns and include the matches (use Glob tool):
-       - `docs/designs/<slug>*.md`
-       - `docs/architecture/<slug>*.md`
-       - `docs/adr/*<slug>*.md`
-       - `docs/contracts/<channel>*.md` (where `<channel>` is derived from the feature, e.g. `orders.placed.v1`)
-       - `schemas/<channel>*.{json,avsc,proto}`
-       - `asyncapi/<channel>*.yaml`
-       - `docs/runbooks/*<slug>*.md`
-       - `docs/launches/<slug>*.md`
+       - `docs/features/<slug>/design.md`
+       - `docs/features/<slug>/adrs/*.md`
+       - `docs/features/<slug>/contracts/*.md`
+       - `docs/features/<slug>/schemas/*`
+       - `docs/features/<slug>/asyncapi/*.yaml`
+       - `docs/features/<slug>/runbooks/*.md`
+       - `docs/features/<slug>/launches/*.md`
+       - `docs/system/adrs/*.md` (platform-wide ADRs that may apply)
 
        If matches exist, link them by relative path. If none exist yet, list the conventional paths where they would land if/when produced (so the reader knows what to look for).
 
@@ -100,10 +111,10 @@ When this skill activates, every answer must include or perform these steps:
 
     d. Reading-before-writing: when writing an artifact for a feature where related docs already exist, the agent should read those docs (at least their Summary blocks) so the new artifact's decisions are consistent with prior ones - particularly patterns named, ordering keys, owner team, and channel names.
 
-16. **Maintain a per-service index doc.** Every artifact-writing command, after writing its main file, must also create or update `docs/services/<slug>/README.md` for the feature's service. This per-service README aggregates every artifact for that service into one entry point. Use this template, filling sections that apply and leaving placeholders where information is unknown:
+16. **Maintain a per-feature index doc.** Every artifact-writing command, after writing its main file, must also create or update `docs/features/<slug>/README.md` for the feature. This per-feature README aggregates every artifact for that feature into one entry point. Use this template, filling sections that apply and leaving placeholders where information is unknown:
 
     ```markdown
-    # <Service Name>
+    # <Feature Name>
 
     ## Service info
     - **Owner team**: <team / Slack / on-call>
@@ -120,11 +131,11 @@ When this skill activates, every answer must include or perform these steps:
     - **Lifecycle**: <created date; deprecation trigger; replacement plan>
 
     ## Artifacts
-    - **Design**: <docs/designs/<slug>-design.md or "(not yet written)">
-    - **ADRs**: <list of docs/adr/*<slug>*.md or "(none)">
-    - **Contracts**: <list of docs/contracts/*.md owned by this service>
-    - **Runbooks**: <list of docs/runbooks/*<slug>*.md>
-    - **Launch decisions**: <list of docs/launches/<slug>-*.md>
+    - **Design**: <link to design.md or "(not yet written)">
+    - **ADRs**: <list of links to adrs/NNNN-<title>.md or "(none)">
+    - **Contracts**: <list of links to contracts/<channel>.md or "(none)">
+    - **Runbooks**: <list of links to runbooks/<incident>.md or "(none)">
+    - **Launch decisions**: <list of links to launches/<date>.md or "(none)">
 
     Do NOT pre-list "Planned" artifacts beyond what already exists; the index reflects state, not roadmap. The user can ask explicitly for a roadmap if they want one.
 
@@ -138,20 +149,29 @@ When this skill activates, every answer must include or perform these steps:
     - <channel-name>: <produced | consumed | both>. See <link to contract>.
     ```
 
-    Keep the per-service README tight. Aim for 30-60 lines total. Each system-concerns line is one phrase, not a paragraph. Each dependency entry is one bullet, not three sub-bullets.
+    Links inside the per-feature README are relative to the README itself: `design.md`, `adrs/NNNN-<title>.md`, `contracts/<channel>.md`, `runbooks/<incident>.md`, `launches/<date>.md` work directly without `../` traversal.
 
-    On every artifact write, append or update the relevant section: `/design` populates Service info + Artifacts.Design + System concerns; `/contract` adds an entry to Channels owned and links the contract; `/runbook` adds to Artifacts.Runbooks; `/architecture` adds to Artifacts.ADRs; `/ship` adds to Artifacts.Launch decisions and updates Tier + Last reviewed. If the file does not exist, create it with placeholders.
+    Keep the per-feature README tight. Aim for 30-60 lines total. Each system-concerns line is one phrase, not a paragraph. Each dependency entry is one bullet, not three sub-bullets.
 
-17. **Maintain a system-level catalog.** Whenever a per-service README is created or updated, the command must also create or update `docs/system/catalog.md` with one row per service. Use this template:
+    On every artifact write, append or update the relevant section. Paths are relative to the README at `docs/features/<slug>/README.md`:
+    - `/design` populates `## Service info`, sets `## Artifacts.Design = design.md`, and fills `## System concerns`.
+    - `/architecture` for a feature-scoped ADR appends `adrs/NNNN-<title>.md` to `## Artifacts.ADRs`.
+    - `/contract` appends `contracts/<channel>.md` to `## Artifacts.Contracts` and adds an entry to `## Channels owned` linking to `contracts/<channel>.md`.
+    - `/runbook` appends `runbooks/<incident>.md` to `## Artifacts.Runbooks`.
+    - `/ship` appends `launches/<date>.md` to `## Artifacts.Launch decisions`, and updates `## Service info.Tier` and `## Service info.Last reviewed`.
+
+    If the file does not exist, create it with placeholders.
+
+17. **Maintain a system-level catalog.** Whenever a per-feature README is created or updated, the command must also create or update `docs/system/catalog.md` with one row per feature. Use this template:
 
     ```markdown
     # System Catalog
 
     Last updated: <YYYY-MM-DD>
 
-    | Service | Owner | Tier | SLO | Compliance | Last reviewed | Index |
+    | Feature | Owner | Tier | SLO | Compliance | Last reviewed | Index |
     | --- | --- | --- | --- | --- | --- | --- |
-    | <slug> | <team> | <tier> | <SLO> | <PII/GDPR/none> | <YYYY-MM-DD> | [README](../services/<slug>/README.md) |
+    | <slug> | <team> | <tier> | <SLO> | <PII/GDPR/none> | <YYYY-MM-DD> | [README](../features/<slug>/README.md) |
 
     ## Cross-cutting concerns
 
@@ -161,7 +181,9 @@ When this skill activates, every answer must include or perform these steps:
     - **DR posture**: link to docs/system/dr.md if it exists.
     ```
 
-    Sort the table alphabetically by slug. Do not invent entries for services that have no per-service README. The catalog is a registry of what exists, not aspirational.
+    Sort the table alphabetically by slug. Do not invent entries for features that have no per-feature README. The catalog is a registry of what exists, not aspirational.
+
+    The catalog uses the term **feature** (matching the folder name `docs/features/<slug>/`) rather than "service" because a feature may span multiple services or sub-systems. The slug is the same identifier used across all artifacts for that feature.
 
 Recommended response shape:
 

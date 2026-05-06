@@ -18,4 +18,4 @@ Walk the failure-mode catalog against the current design or diff. Distributed sy
 
 ## Output
 
-This command produces conversational findings, not a file. If failure-mode findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/services/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.
+This command produces conversational findings, not a file. If failure-mode findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/features/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.

@@ -18,14 +18,14 @@ The user has a new integration or event-flow problem. Produce a written design d
 
 ## Output
 
-8. Before writing, run a Glob for `docs/**/*.md`, `schemas/**`, `asyncapi/**` matching this feature's slug and channel names. Populate the **Related artifacts** section with concrete paths to existing peers; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
+8. Before writing, run a Glob for `docs/features/<slug>/**` to enumerate existing peer artifacts (ADRs, contracts, schemas, asyncapi, runbooks, launches). Populate the **Related artifacts** section with concrete relative paths to existing peers; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
 
-9. **Update the per-service index and system catalog.** After writing the main artifact, also create or update:
-   - `docs/services/<slug>/README.md` - the per-service entry point. Append/update the relevant Artifacts subsection (Design / ADRs / Contracts / Runbooks / Launches) with a link to the new artifact. If the file does not exist, create it from the template in SKILL.md item 16.
-   - `docs/system/catalog.md` - the system-level service registry. Append/update the row for `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
+9. **Update the per-feature index and system catalog.** After writing the main artifact, also create or update:
+   - `docs/features/<slug>/README.md` - the per-feature entry point. Append/update the relevant Artifacts subsection (Design / ADRs / Contracts / Runbooks / Launches) with a link to the new artifact. If the file does not exist, create it from the template in SKILL.md item 16.
+   - `docs/system/catalog.md` - the system-level feature registry. Append/update the row for `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
    These updates are part of the same command turn; do not leave them for a follow-up.
 
-**Write the design to `docs/designs/<feature-slug>-design.md`** in the current repo. Pick a slug from the user's prompt (e.g. `order-fulfillment`, `webhook-ingestion`). If `docs/` does not exist, create it. If a file with the same name exists, ask before overwriting.
+**Write the design to `docs/features/<feature-slug>/design.md`** in the current repo. Pick a slug from the user's prompt (e.g. `order-fulfillment`, `webhook-ingestion`). If `docs/features/<slug>/` does not exist, create it. If a file with the same name exists, ask before overwriting.
 
 Use this structure:
 
@@ -77,20 +77,22 @@ Use this structure:
 [Tier name + 3-5 bullet gaps to the next tier. Keep tight.]
 
 ## Related artifacts
-- Architecture decisions: `docs/adr/` (ADRs that record specific choices made here)
-- Contracts: `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`
-- Runbooks: `docs/runbooks/` (DLQ triage, replay, failover for the channels listed above)
-- Launch decisions: `docs/launches/<slug>-<YYYY-MM-DD>.md`
+[Paths are relative to `docs/features/<slug>/design.md`.]
+- Architecture decisions: `adrs/` (feature-scoped ADRs that record specific choices made here)
+- Contracts: `contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`
+- Runbooks: `runbooks/` (DLQ triage, replay, failover for the channels listed above)
+- Launch decisions: `launches/<YYYY-MM-DD>.md`
+- System catalog: `../../system/catalog.md`
 ```
 
 **Strict rule: a design doc is a decision artifact, not a code artifact.** Do NOT include Go, SQL, JSON, YAML, or any implementation code blocks in this file. Specifically:
 
-- "Boundary contracts" describes channel names, event types, ordering keys, idempotency keys, retention, DLQ owner, schema compatibility mode — at the *conceptual* level. The actual schemas and AsyncAPI specs are produced by `/contract` and live under `schemas/` and `asyncapi/`. Reference them by path, do not inline them.
+- "Boundary contracts" describes channel names, event types, ordering keys, idempotency keys, retention, DLQ owner, schema compatibility mode — at the *conceptual* level. The actual schemas and AsyncAPI specs are produced by `/contract` and live under `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/`. Reference them by path, do not inline them.
 - "File and component plan" is a bulleted file inventory: which source files / migrations / IaC the implementation will touch (e.g. `internal/orders/place.go`, `migrations/NNNN_add_outbox.sql`, `deploy/k8s/orders-consumer.yaml`). One line per file. No code.
 - "Open questions" lists decisions still needed, with owners and target dates. Use `<YYYY-MM-DD>` placeholders if no date is set yet.
 
 If the user wants implementation code, that is a follow-up step (regular prompt or `/architecture` for an Implementation Plan doc). If they want the actual schema and AsyncAPI files, route to `/contract`. If they want a runbook, route to `/runbook`.
 
-Then emit a one-line confirmation in chat: `Design written to docs/designs/<slug>-design.md`. Do not paste the full design back into chat unless the user asks.
+Then emit a one-line confirmation in chat: `Design written to docs/features/<slug>/design.md`. Do not paste the full design back into chat unless the user asks.
 
 If the user explicitly says "show in chat only" or "don't write a file", skip the file write and respond conversationally.

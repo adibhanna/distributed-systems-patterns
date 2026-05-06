@@ -25,4 +25,4 @@ End with the readiness-tier verdict and the gaps to the next tier (if any).
 
 This command produces conversational findings, not a file. Use `/architecture` if the user wants a permanent decision artifact, `/ship` for a launch-decision document.
 
-If review findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/services/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.
+If review findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/features/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.

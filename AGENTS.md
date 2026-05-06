@@ -8,12 +8,12 @@ Apply this skill whenever the task involves designing systems at scale: integrat
 
 ## Connected system
 
-This skill is not 8 isolated commands; it is a connected system. Every artifact write also updates two index docs so the design stays navigable:
+This skill is not 8 isolated commands; it is a connected system. Every artifact lives under one per-feature folder, and every write updates two index docs so the design stays navigable:
 
-- `docs/services/<slug>/README.md` aggregates a service's info, system concerns, artifacts, dependencies, and owned channels.
-- `docs/system/catalog.md` lists every service with one row each, linking to the per-service README.
+- `docs/features/<slug>/README.md` aggregates a feature's info, system concerns, artifacts, dependencies, and owned channels. Sibling folders under it hold the artifacts: `design.md`, `adrs/`, `contracts/`, `schemas/`, `asyncapi/`, `runbooks/`, `launches/`.
+- `docs/system/catalog.md` lists every feature with one row each, linking to the per-feature README. Platform-wide ADRs that span features live at `docs/system/adrs/NNNN-<title>.md`.
 
-Reader path: catalog -> service README -> artifact (design, ADR, contract, runbook, launch). See SKILL.md items 16-17 for templates.
+Reader navigation: `docs/system/catalog.md` -> `docs/features/<slug>/README.md` -> any artifact under `docs/features/<slug>/{design,adrs,contracts,schemas,asyncapi,runbooks,launches}`. See SKILL.md items 16-17 for templates.
 
 Trigger signals:
 
@@ -30,13 +30,13 @@ Do not apply for pure local request-response, pure frontend work, single-process
 2. **Run the 8-question reliability checklist.** Map readiness to the tier defined in `reference/production-guide.md` (Prototype, Service-ready, Production-ready, Enterprise-critical). Downgrade rather than refuse when checklist items are open, and state the gaps.
 3. **Flag anti-patterns explicitly.** Especially dual-write, missing idempotency, ack-before-commit, unbounded retries, and DLQ-with-no-owner.
 4. **Cite the modern realization.** Examples: Kafka consumer group, SQS DLQ/redrive, Debezium outbox SMT, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal.
-5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `schemas/` and `asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
+5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
 6. **When code is shown, annotate the pattern at the boundary** with a single comment line such as `// Pattern: Idempotent Receiver - dedupe by event id`. Do not annotate every line; the goal is to make the pattern visible at the point it is enforced.
 7. **For AWS implementations, pattern first and service second.** Load [`reference/aws-service-mapping.md`](./reference/aws-service-mapping.md) and map system design concepts to SQS, SNS, EventBridge, Lambda event source mappings, Kinesis, MSK, DynamoDB Streams, Step Functions, and S3 without making non-AWS designs AWS-specific.
 8. **For distributed-system risks, name those patterns too.** Load [`reference/distributed-systems-guide.md`](./reference/distributed-systems-guide.md) for boundaries, consistency, scaling, resilience, caching, sharding, multi-region, service mesh, SLOs, and governance.
 9. **For architecture documents, produce decision-ready artifacts.** Load [`reference/architecture-documentation.md`](./reference/architecture-documentation.md) for design docs, RFCs, ADRs, implementation plans, migration plans, diagrams, trade-offs, rollout, and verification.
 10. **For production usage, use practical guides.** Load scenario playbooks, failure modes, security/compliance, testing strategy, operational runbooks, maturity model, or platform mappings when they match the request.
-11. **Keep the system navigable.** After writing any artifact, update `docs/services/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
+11. **Keep the system navigable.** After writing any artifact, update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
 
 ## Pattern Selection Excerpt
 

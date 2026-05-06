@@ -16,16 +16,18 @@ A runbook is for a paged engineer at 2am. Be specific, ordered, and safe.
 6. Define the audit trail requirements: ticket id, who ran which step, what was redriven, sample payloads handled.
 7. Add the post-incident actions: root cause, prevention item (test, alert, code change), runbook update.
 8. Validate against the runbook quality bar from `reference/operational-runbooks.md`: owner, dashboards, safety warnings, steps, stop criteria, verification, audit, follow-up.
-9. Before writing, run a Glob for `docs/designs/*<slug>*.md`, `docs/architecture/*<slug>*.md`, `docs/adr/*<slug>*.md`, `docs/contracts/*<channel>*.md`, `schemas/<channel>*`, `asyncapi/<channel>*.yaml`, `docs/runbooks/*<slug>*.md`, `docs/launches/<slug>*.md`. Populate the `## Related artifacts` section with concrete relative paths; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
+9. Before writing, run a Glob for `docs/features/<slug>/**` to enumerate peer artifacts. Populate the `## Related artifacts` section with concrete relative paths; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
 
-10. **Update the per-service index and system catalog.** After writing the main artifact, also create or update:
-    - `docs/services/<slug>/README.md` - the per-service entry point. Append/update the `Artifacts.Runbooks` subsection with a link to the new runbook. If the file does not exist, create it from the template in SKILL.md item 16.
-    - `docs/system/catalog.md` - the system-level service registry. Append/update the row for `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
+10. **Update the per-feature index and system catalog.** After writing the main artifact, also create or update:
+    - `docs/features/<slug>/README.md` - the per-feature entry point. Append/update the `Artifacts.Runbooks` subsection with a link to the new runbook. If the file does not exist, create it from the template in SKILL.md item 16.
+    - `docs/system/catalog.md` - the system-level feature registry. Append/update the row for `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
     These updates are part of the same command turn; do not leave them for a follow-up.
 
 ## Output
 
-**Write the runbook to `docs/runbooks/<incident-slug>.md`** (e.g. `dlq-triage-orders-placed-v1.md`, `region-failover.md`). Create `docs/runbooks/` if it does not exist. If a file with the same name exists, ask before overwriting.
+The user's prompt names a service or channel; derive the feature slug from that.
+
+**Write the runbook to `docs/features/<slug>/runbooks/<incident-slug>.md`** (e.g. `dlq-triage.md`, `region-failover.md`). Drop the `<feature>-` prefix from the filename since the feature is now the folder. Create `docs/features/<slug>/runbooks/` if it does not exist. If a file with the same name exists, ask before overwriting.
 
 Prepend:
 
@@ -51,10 +53,12 @@ Append:
 
 ```markdown
 ## Related artifacts
-- Design that introduces the failure path: `docs/designs/<slug>-design.md`
-- Affected contracts: `docs/contracts/<channel>.md`
+[Paths are relative to `docs/features/<slug>/runbooks/<incident-slug>.md`.]
+- Design that introduces the failure path: `../design.md`
+- Affected contracts: `../contracts/<channel>.md`
+- Per-feature README: `../README.md`
 - Failure-mode catalog: `reference/failure-modes.md`
-- Other runbooks for adjacent incidents: `docs/runbooks/`
+- Other runbooks for adjacent incidents: `./` (siblings)
 ```
 
-Emit a one-line confirmation in chat: `Runbook written to docs/runbooks/<slug>.md`. Do not paste the full runbook back into chat. If the user explicitly says "show in chat", respond conversationally instead.
+Emit a one-line confirmation in chat: `Runbook written to docs/features/<slug>/runbooks/<incident-slug>.md`. Do not paste the full runbook back into chat. If the user explicitly says "show in chat", respond conversationally instead.
