@@ -115,7 +115,35 @@ If you want code, ask for it explicitly: "Show me a Go boundary snippet for the 
 
 ## 3. Walkthrough: shipping order fulfillment and locking in shared knowledge
 
-A complete journey — pick patterns, define contracts, implement, review, ship, then promote a recurring rule to a platform standard. Each step uses one slash command.
+A complete journey — pick patterns, define contracts, implement, review, ship, promote a recurring rule to a platform standard, then ship a second feature that inherits the standard. Each step uses one slash command.
+
+### Reset before testing
+
+If you've run this walkthrough before, clear the test artifacts so this is a clean run:
+
+```bash
+rm -rf docs schemas asyncapi
+```
+
+Run from the root of your test project (e.g. `cd ~/Desktop/testingskill`). The skill writes everything under `docs/`, `schemas/`, and `asyncapi/`; deleting those resets you to a known state. The skill itself is symlinked from `~/.agents/skills/distributed-systems-patterns/` and stays put.
+
+### Time the run
+
+Round-2 baselines on a typical machine (after the v0.3.0 trim):
+
+| Step                    | Expected time                             |
+| ----------------------- | ----------------------------------------- |
+| Step 1 `/design`        | ~3 min                                    |
+| Step 2 `/contract`      | ~2.5 min                                  |
+| Step 3 (no command)     | n/a                                       |
+| Step 4 `/review`        | ~1.5 min (chat only)                      |
+| Step 5 `/failure-mode`  | ~1.5 min (chat only)                      |
+| Step 6 `/readiness`     | ~1.5 min (chat only)                      |
+| Step 7 `/ship`          | ~5 min (3 parallel subagents + synthesis) |
+| Step 8 `/standard`      | ~1 min                                    |
+| Step 9 second `/design` | ~2.5 min                                  |
+
+Track yours and report any large deviations.
 
 ### Step 1 — `/design` — pick the patterns
 
@@ -195,22 +223,26 @@ Output shape:
 ## Findings
 
 ### Critical
+
 - src/inventory/consumer.go:142 — ack-before-commit. Inbox row inserted
   AFTER offset commit. Risk: message loss on consumer crash. Pattern:
   Idempotent Receiver requires the inbox write and side-effect to commit
   together; offset commits last.
 
 ### Important
+
 - src/inventory/consumer.go:88 — unbounded retry. Pattern: Retry classifier
   must distinguish transient from permanent; permanent goes to DLQ
   immediately.
 
 ### System
+
 - The inventory service has no listed cost owner in
   docs/features/order-fulfillment/README.md. With outbox + Debezium + Kafka,
   per-event cost lands somewhere — name it.
 
 ## Readiness tier impact
+
 Currently: Service-ready. Production-ready blocked by the ack-before-commit
 Critical and the System cost-owner gap.
 ```
@@ -261,6 +293,7 @@ The launch decision file follows this structure (Summary + System concerns + the
 
 ```markdown
 ## Summary
+
 - **Status**: NO-GO
 - **Date**: 2026-05-06
 - **Feature**: order-fulfillment
@@ -268,6 +301,7 @@ The launch decision file follows this structure (Summary + System concerns + the
 - **TL;DR**: Two Critical blockers — ack-before-commit and replay-sends-emails — must land before GO.
 
 ## System concerns
+
 - **Owner team**: Orders Platform
 - **Tenancy**: multi-tenant w/ tenant_id partitioning (hot-key risk noted)
 - **Compliance**: PCI-adjacent (no card data in the pipeline)
@@ -279,21 +313,25 @@ The launch decision file follows this structure (Summary + System concerns + the
 ## Ship Decision
 
 ### Blockers (must fix before ship)
+
 - consumer.go:142 — ack-before-commit (Critical, from review subagent)
 - replay sends duplicate confirmation emails (Critical, from failure-mode)
 
 ### Recommended fixes
+
 - Add bounded retry with jitter (Important, from review)
 - Capacity test under skewed tenant_id load (Important, from failure-mode)
 
 ### Acknowledged risks (none accepted yet)
 
 ### Rollback plan
+
 - Trigger: DLQ depth > 100 in 5 min, or end-to-end latency p95 > 5s.
 - Procedure: flip feature flag, halt CDC publisher, stop workflow workers, drain consumer, schema-rollback if needed.
 - RTO: 10 minutes from page to flag flip.
 
 ## Related artifacts
+
 - Design: `../design.md`
 - ADRs: `../adrs/0001-temporal-saga.md`
 - Contracts: `../contracts/orders.placed.v1.md`
@@ -301,6 +339,7 @@ The launch decision file follows this structure (Summary + System concerns + the
 - Feature index: `../README.md`
 
 ## Shared references
+
 - Observability standard: `../../system/standards/observability.md`
 - Channel-naming standard: `../../system/standards/channel-naming.md`
 - Broker outage runbook: `../../system/runbooks/broker-outage.md`
@@ -324,19 +363,92 @@ The command writes `docs/system/standards/observability.md` (Status, Date, Owner
 
 Confirmation: `Standard written to docs/system/standards/observability.md`.
 
+### Step 9 — second `/design` — watch shared knowledge get inherited
+
+Now build a second feature and watch it reference the standard from Step 8 instead of restating it. This is the payoff demonstration of "reference, don't restate."
+
+```text
+/design Build a webhook-ingestion platform. Accept Stripe and GitHub
+webhook deliveries, verify signatures, dedupe by provider delivery id,
+and republish as internal CloudEvents on `webhooks.received.v1`.
+Owner: Platform Engineering. Multi-tenant via tenant_id in URL path.
+PII may appear in payload bodies. Capacity 5k webhooks/sec p99.
+```
+
+Watch the output:
+
+- Writes `docs/features/webhook-ingestion/design.md`. Its `## Shared references` section should link to `../../system/standards/observability.md` from Step 8 — the agent globbed `docs/system/standards/`, found the observability standard applies, and referenced it instead of restating "we emit OpenTelemetry traces."
+- Creates `docs/features/webhook-ingestion/README.md` with its own `## Shared references` section pointing at the same standard.
+- Adds a row for `webhook-ingestion` to `docs/system/catalog.md`. Catalog now has two features.
+
+If the agent skips the `## Shared references` section or restates the observability rule inline, the skill regressed — tell me which step.
+
+### Step 10 — inspect the connected system
+
+After all 9 steps, the test project should look like this:
+
+```
+docs/
+├── system/
+│   ├── catalog.md                      # both features listed
+│   └── standards/
+│       └── observability.md            # from Step 8
+└── features/
+    ├── order-fulfillment/
+    │   ├── README.md                   # links to design, contracts, ADRs, runbooks, launches
+    │   ├── design.md
+    │   ├── adrs/0001-saga-orchestrator.md
+    │   ├── contracts/orders.placed.v1.md
+    │   ├── schemas/orders.placed.v1.json
+    │   ├── asyncapi/orders.placed.v1.yaml
+    │   ├── runbooks/dlq-triage.md      # if you ran /runbook
+    │   └── launches/2026-05-06.md      # from Step 7
+    └── webhook-ingestion/
+        ├── README.md                   # references observability standard
+        └── design.md                   # references observability standard
+```
+
+Verify the connected system from your terminal:
+
+```bash
+echo "=== System catalog (should list 2 features) ==="
+cat docs/system/catalog.md
+
+echo
+echo "=== Order-fulfillment per-feature index ==="
+cat docs/features/order-fulfillment/README.md
+
+echo
+echo "=== Webhook-ingestion design's Shared references (should link to observability) ==="
+sed -n '/## Shared references/,/^## /p' docs/features/webhook-ingestion/design.md
+
+echo
+echo "=== All cross-links resolve (empty = good) ==="
+find docs -name '*.md' | while read f; do
+  grep -oE '\[[^]]+\]\([^)]+\.md\)' "$f" | grep -oE '\([^)]+\)' | tr -d '()' | while read link; do
+    target="$(cd "$(dirname "$f")" && cd "$(dirname "$link")" 2>/dev/null && pwd)/$(basename "$link")"
+    [ -f "$target" ] || echo "BROKEN: $f -> $link"
+  done
+done
+```
+
+The two-click navigation should work end to end: `docs/system/catalog.md` → click the order-fulfillment README link → click the orders.placed.v1 contract link → see schema + asyncapi as siblings. From the same catalog, click the webhook-ingestion README → see its `## Shared references` linking back to the platform observability standard.
+
+That's the connected system: per-feature folders aggregate everything for one feature; the per-feature README serves as the entry point; shared knowledge in `docs/system/` is referenced (not restated) by every feature; the catalog at `docs/system/catalog.md` indexes the whole system.
+
 ## 4. Command reference
 
-| Command | Role in the system | Writes? | Example prompt |
-| --- | --- | --- | --- |
-| `/design` | Pick patterns and boundaries; write a service design with system concerns | yes (under `docs/features/<slug>/`) | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
-| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention | yes (3 files under `docs/features/<slug>/`) | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.` |
-| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution | yes (under `docs/features/<slug>/adrs/` or `docs/system/adrs/`) | `/architecture ADR for using a workflow engine vs choreography for the refund flow.` |
-| `/standard` | Platform convention every feature follows | yes (under `docs/system/standards/<topic>.md`) | `/standard observability — every service emits OpenTelemetry traces.` |
-| `/runbook` | Operational artifact for an incident type tied to a service, channel, or the platform | yes (under `docs/features/<slug>/runbooks/` or `docs/system/runbooks/`) | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
-| `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius | no (chat) | `/review the changes in src/payments/.` |
-| `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat) | `/failure-mode for the new high-volume telemetry pipeline.` |
-| `/readiness` | Map a service or change to a readiness tier; walk technical and system-concerns evidence | no (chat) | `/readiness for the inventory service before customer rollout.` |
-| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback | yes (under `docs/features/<slug>/launches/`) | `/ship the payments service for the v2.0 release.` |
+| Command         | Role in the system                                                                                | Writes?                                                                 | Example prompt                                                                                                   |
+| --------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `/design`       | Pick patterns and boundaries; write a service design with system concerns                         | yes (under `docs/features/<slug>/`)                                     | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
+| `/contract`     | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention                      | yes (3 files under `docs/features/<slug>/`)                             | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.`                                |
+| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution  | yes (under `docs/features/<slug>/adrs/` or `docs/system/adrs/`)         | `/architecture ADR for using a workflow engine vs choreography for the refund flow.`                             |
+| `/standard`     | Platform convention every feature follows                                                         | yes (under `docs/system/standards/<topic>.md`)                          | `/standard observability — every service emits OpenTelemetry traces.`                                            |
+| `/runbook`      | Operational artifact for an incident type tied to a service, channel, or the platform             | yes (under `docs/features/<slug>/runbooks/` or `docs/system/runbooks/`) | `/runbook for DLQ triage on orders.placed.v1.dlq.`                                                               |
+| `/review`       | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius           | no (chat)                                                               | `/review the changes in src/payments/.`                                                                          |
+| `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat)                                                               | `/failure-mode for the new high-volume telemetry pipeline.`                                                      |
+| `/readiness`    | Map a service or change to a readiness tier; walk technical and system-concerns evidence          | no (chat)                                                               | `/readiness for the inventory service before customer rollout.`                                                  |
+| `/ship`         | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback            | yes (under `docs/features/<slug>/launches/`)                            | `/ship the payments service for the v2.0 release.`                                                               |
 
 Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/standard`, `/runbook`, `/ship`) also updates `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
 
@@ -372,7 +484,7 @@ Or invoke a command directly — commands always activate the skill.
 
 **Language-agnostic by default.** The skill produces architectural artifacts (decisions, contracts, runbooks) in any repo regardless of language. Patterns, anti-patterns, reliability questions, and system concerns are language-neutral. When you do ask for code at a pattern boundary, the skill uses the repo's language if one is detectable; if not, it stays at language-agnostic pseudocode rather than picking one.
 
-For non-Go ecosystems, `reference/non-go-pointers.md` lists *options* (Spring Kafka / Spring Cloud Stream for Java, KafkaJS / NestJS for TypeScript, aiokafka / confluent-kafka-python for Python) without recommending a specific one — that's a team choice.
+For non-Go ecosystems, `reference/non-go-pointers.md` lists _options_ (Spring Kafka / Spring Cloud Stream for Java, KafkaJS / NestJS for TypeScript, aiokafka / confluent-kafka-python for Python) without recommending a specific one — that's a team choice.
 
 **Reading the references directly.** Every command names which reference file it loads. You can read those files directly to understand the source material:
 
