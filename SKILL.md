@@ -1,6 +1,8 @@
 ---
 name: distributed-systems-patterns
-description: Apply distributed-systems, messaging, and integration patterns when designing, writing, or reviewing event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, multi-region, or architecture-decision code and docs. Triggers include Kafka, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus, NATS, Pulsar, Temporal, Step Functions, Camunda, Debezium, CloudEvents, AsyncAPI, OpenTelemetry, KEDA, and service mesh, plus concepts like idempotency, DLQs, retries, ordering, schema evolution, replay, fan-out, sharding, backpressure, circuit breaking, autoscaling, SLOs, RFCs, and ADRs. Generated code defaults to production-oriented Go.
+description: Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, and operational artifacts for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Triggers include Kafka, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus, NATS, Pulsar, Temporal, Step Functions, Debezium, CloudEvents, AsyncAPI, OpenTelemetry, KEDA, and service mesh, plus idempotency, DLQs, retries, ordering, schema evolution, replay, sharding, backpressure, circuit breaking, autoscaling, SLOs, RFCs, and ADRs. Default outputs are decisions and contracts, not implementation code; specific libraries are user choices.
+version: 0.2.0
+tags: [distributed-systems, messaging, event-driven, integration, architecture, microservices, kafka, aws, cloudevents, asyncapi]
 ---
 
 # Distributed Systems Patterns
@@ -11,8 +13,9 @@ Use this skill for code, architecture, and decision documents that cross service
 
 The patterns are technology-neutral; Kafka topics, SQS queues, Temporal workflows, EventBridge rules, Kubernetes autoscalers, Envoy circuit breakers, Debezium outbox SMTs, CloudEvents envelopes, and AsyncAPI contracts are modern implementations of the same pattern-and-forces mindset.
 
-This skill is an operating procedure. For depth, load only the reference file needed:
+This skill is an operating procedure. Load only the reference file needed:
 
+**Architectural and decision references** (load when designing, reviewing, or documenting):
 - `reference/catalog.md` - systems, messaging, workflow, and resilience patterns with modern realizations.
 - `reference/decision-tree.md` - problem-to-pattern selection guide.
 - `reference/checklist.md` - review gates for producer, consumer, workflow, schema, security, infra, and tests.
@@ -21,8 +24,6 @@ This skill is an operating procedure. For depth, load only the reference file ne
 - `reference/architecture-examples.md` - filled ADR/RFC examples for common decisions.
 - `reference/distributed-systems-guide.md` - service boundaries, scaling, resilience, caching, sharding, multi-region, mesh, SLOs, and governance.
 - `reference/modern-integration-field-guide.md` - modern EDA guidance, platform traps, replay, CQRS, and exactly-once boundaries.
-- `reference/aws-service-mapping.md` - AWS-neutral mapping for SQS, SNS, EventBridge, Lambda, Kinesis, MSK, DynamoDB Streams, Step Functions, and S3.
-- `reference/platform-service-mapping.md` - GCP, Azure, Kafka, RabbitMQ, NATS, Pulsar, and cloud-neutral mapping.
 - `reference/scenario-playbooks.md` - common end-to-end architectures users can adapt.
 - `reference/failure-modes.md` - failure catalog for reviews, incidents, and design docs.
 - `reference/testing-strategy.md` - contract, integration, replay, workflow, failure, and load tests.
@@ -30,16 +31,22 @@ This skill is an operating procedure. For depth, load only the reference file ne
 - `reference/operational-runbooks.md` - DLQ, lag, replay, schema rollback, workflow, and region failover runbooks.
 - `reference/maturity-model.md` - adoption levels and next steps for teams/platforms.
 - `reference/evaluation-prompts.md` - prompts to test whether the skill behaves well.
-- `reference/go-examples.md` - production-oriented Go snippets.
-- `reference/go-implementation-patterns.md` - Go worker pools, timeouts, idempotency interfaces, shutdown, and workflow reminders.
 - `reference/production-guide.md` - enterprise defaults, ownership, SLOs, runbooks, and platform choices.
 - `reference/message-contract-template.md` - CloudEvents + AsyncAPI contract starter.
-- `reference/webhook-security-go.md` - webhook signature verification, timestamp windows, replay-window dedup, Go example.
 - `reference/schema-migration.md` - concrete walkthrough for adding/renaming/removing event-contract fields without breaking consumers.
 - `reference/cost-and-finops.md` - cost-aware operation: retention, per-event pricing, cross-region egress, queue depth vs spend.
-- `reference/grpc-streaming.md` - gRPC server-streaming, bidirectional streams, deadlines, retry interceptors, status codes.
+
+**Cloud and platform mapping** (load when target cloud or platform is in scope):
+- `reference/aws-service-mapping.md` - AWS-neutral mapping for SQS, SNS, EventBridge, Lambda, Kinesis, MSK, DynamoDB Streams, Step Functions, and S3.
+- `reference/platform-service-mapping.md` - GCP, Azure, Kafka, RabbitMQ, NATS, Pulsar, and cloud-neutral mapping.
+
+**Code reference** (load only when the user explicitly asks for implementation code):
+- `reference/go-examples.md` - production-oriented Go snippets at pattern boundaries (outbox, idempotent receiver, DLQ, retry, Temporal saga). Library choices in these snippets are illustrative, not prescriptive.
+- `reference/go-implementation-patterns.md` - Go worker pools, timeouts, idempotency interfaces, shutdown, and workflow reminders.
+- `reference/webhook-security-go.md` - webhook signature verification with the boundary pattern in Go.
+- `reference/grpc-streaming.md` - gRPC server-streaming, bidirectional streams, deadlines, retry interceptors.
 - `reference/llm-workflow-patterns.md` - async LLM inference queueing, bounded retry, model-output validation, streaming token handoff.
-- `reference/non-go-pointers.md` - minimal pointers for Java/Spring Cloud Stream, TypeScript/NestJS, Python/FastAPI consumers.
+- `reference/non-go-pointers.md` - language-pointers for Java, TypeScript, and Python: where the patterns live in each ecosystem, with library options not picks.
 
 ## Mandatory Agent Contract
 
@@ -49,16 +56,17 @@ When this skill activates, every answer must include or perform these steps:
 2. Run the 8-question reliability checklist before writing or accepting code.
 3. Flag anti-patterns directly, especially dual-write, missing idempotency, unbounded retries, and missing DLQ ownership.
 4. Cite the modern tool or protocol that realizes the pattern.
-5. When generating code, prefer Go unless the repo is clearly in another language.
-6. Annotate produced integration code with pattern comments at the boundary - the producer call, consumer handler, retry/DLQ branch, idempotency check, or transaction boundary - for example `// Pattern: Idempotent Receiver - dedupe by CloudEvents id`. Do not repeat the same annotation on every line; the goal is to make the pattern visible at the point it is enforced, not to drown the code in comments.
-7. Map readiness to the tier defined in `reference/production-guide.md` (Prototype → Service-ready → Production-ready → Enterprise-critical). Do not call code "production-ready" or "enterprise-critical" while reliability or distributed-systems checklist items are unanswered; downgrade to "service-ready" or "prototype" as appropriate and state the gaps.
-8. If AWS services are in scope, load `reference/aws-service-mapping.md` and map the pattern to the AWS service without making the design AWS-only.
-9. If the risk is scale, consistency, resilience, service boundaries, multi-region, or enterprise operations, load `reference/distributed-systems-guide.md` and name the distributed-systems pattern(s), not only the messaging pattern(s).
-10. If the user asks for an architecture doc, design doc, RFC, ADR, technical plan, migration plan, or decision reference, load `reference/architecture-documentation.md` and produce a decision-ready document with patterns, alternatives, trade-offs, rollout, verification, and operations.
-11. For production-readiness, launch, incident, security, or testing requests, load the specific guide: `security-compliance.md`, `testing-strategy.md`, `operational-runbooks.md`, `failure-modes.md`, or `maturity-model.md`.
-12. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using a stable path: `docs/designs/<slug>-design.md`, `docs/adr/NNNN-<slug>.md`, `docs/architecture/<slug>-<doctype>.md`, `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`, `docs/runbooks/<slug>.md`, or `docs/launches/<slug>-<YYYY-MM-DD>.md`. After writing, emit a one-line confirmation naming the path - do not paste the full document back into chat. Skip the file write only on an explicit opt-out signal: `show in chat only`, `don't write a file`, `chat only`, or `no file`. The bare verb "show" or phrases like "show me X before Y" are about response *ordering*, not output medium, and must not trigger the escape hatch. Conversational analyses (review findings, readiness assessment, failure-mode discussion) stay in chat by default.
+5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `schemas/` and `asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
+6. **When code is shown, annotate the pattern at the boundary** with a single comment line such as `// Pattern: Idempotent Receiver - dedupe by event id`. Do not annotate every line; the goal is to make the pattern visible at the point it is enforced.
+7. **Recommend tool categories, not specific packages, by default.** Say "a Kafka-compatible broker" or "a CDC tool" before naming Kafka, Redpanda, or Debezium. Specific package recommendations (which Kafka client, which ORM, which HTTP framework) are team decisions; offer them only if the user asks "which library should I use?" In that case, list 2-3 options with the trade-offs that distinguish them, and refuse to pick on the team's behalf.
+8. Map readiness to the tier defined in `reference/production-guide.md` (Prototype → Service-ready → Production-ready → Enterprise-critical). Do not call code "production-ready" or "enterprise-critical" while reliability or distributed-systems checklist items are unanswered; downgrade to "service-ready" or "prototype" as appropriate and state the gaps.
+9. If AWS services are in scope, load `reference/aws-service-mapping.md` and map the pattern to the AWS service without making the design AWS-only.
+10. If the risk is scale, consistency, resilience, service boundaries, multi-region, or enterprise operations, load `reference/distributed-systems-guide.md` and name the distributed-systems pattern(s), not only the messaging pattern(s).
+11. If the user asks for an architecture doc, design doc, RFC, ADR, technical plan, migration plan, or decision reference, load `reference/architecture-documentation.md` and produce a decision-ready document with patterns, alternatives, trade-offs, rollout, verification, and operations.
+12. For production-readiness, launch, incident, security, or testing requests, load the specific guide: `security-compliance.md`, `testing-strategy.md`, `operational-runbooks.md`, `failure-modes.md`, or `maturity-model.md`.
+13. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using a stable path: `docs/designs/<slug>-design.md`, `docs/adr/NNNN-<slug>.md`, `docs/architecture/<slug>-<doctype>.md`, `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`, `docs/runbooks/<slug>.md`, or `docs/launches/<slug>-<YYYY-MM-DD>.md`. After writing, emit a one-line confirmation naming the path - do not paste the full document back into chat. Skip the file write only on an explicit opt-out signal: `show in chat only`, `don't write a file`, `chat only`, or `no file`. The bare verb "show" or phrases like "show me X before Y" are about response *ordering*, not output medium, and must not trigger the escape hatch. Conversational analyses (review findings, readiness assessment, failure-mode discussion) stay in chat by default.
 
-13. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `schemas/` and `asyncapi/` produced by `/contract`. Runbooks belong in `docs/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
+14. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `schemas/` and `asyncapi/` produced by `/contract`. Runbooks belong in `docs/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
 
 Recommended response shape:
 

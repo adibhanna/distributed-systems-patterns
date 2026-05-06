@@ -4,7 +4,7 @@ This is the cross-tool entry point for Codex, Claude, OpenCode, Aider, Cursor, a
 
 ## Activation
 
-Apply this skill whenever the task involves integration, messaging, event-driven code, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture.
+Apply this skill whenever the task involves integration, messaging, event-driven decisions and contracts, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture. Default outputs are architectural decisions, contracts, and operational artifacts; code is shown only when explicitly requested.
 
 Trigger signals:
 
@@ -21,8 +21,8 @@ Do not apply for pure local request-response, pure frontend work, single-process
 2. **Run the 8-question reliability checklist.** Map readiness to the tier defined in `reference/production-guide.md` (Prototype, Service-ready, Production-ready, Enterprise-critical). Downgrade rather than refuse when checklist items are open, and state the gaps.
 3. **Flag anti-patterns explicitly.** Especially dual-write, missing idempotency, ack-before-commit, unbounded retries, and DLQ-with-no-owner.
 4. **Cite the modern realization.** Examples: Kafka consumer group, SQS DLQ/redrive, Debezium outbox SMT, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal.
-5. **Prefer Go for generated code samples** unless the repo's language is clearly different.
-6. **Annotate integration code with pattern comments** at the implementation point, for example `// Pattern: Idempotent Receiver - dedupe by CloudEvents id`.
+5. **Default outputs are architectural decisions, contracts, and operational artifacts — not implementation code.** Decisions go in design docs and ADRs. Schemas and event APIs go in `schemas/` and `asyncapi/`. Operational procedures go in runbooks. When the user explicitly asks for code, keep it minimal and at the pattern boundary (outbox insert, idempotent dedup check, retry classifier, ack/commit ordering) rather than full production handlers. Use the language the repo is written in; if no repo language is clear, default to language-agnostic pseudocode rather than picking one.
+6. **When code is shown, annotate the pattern at the boundary** with a single comment line such as `// Pattern: Idempotent Receiver - dedupe by event id`. Do not annotate every line; the goal is to make the pattern visible at the point it is enforced.
 7. **For AWS implementations, pattern first and service second.** Load [`reference/aws-service-mapping.md`](./reference/aws-service-mapping.md) and map system design concepts to SQS, SNS, EventBridge, Lambda event source mappings, Kinesis, MSK, DynamoDB Streams, Step Functions, and S3 without making non-AWS designs AWS-specific.
 8. **For distributed-system risks, name those patterns too.** Load [`reference/distributed-systems-guide.md`](./reference/distributed-systems-guide.md) for boundaries, consistency, scaling, resilience, caching, sharding, multi-region, service mesh, SLOs, and governance.
 9. **For architecture documents, produce decision-ready artifacts.** Load [`reference/architecture-documentation.md`](./reference/architecture-documentation.md) for design docs, RFCs, ADRs, implementation plans, migration plans, diagrams, trade-offs, rollout, and verification.
@@ -73,14 +73,14 @@ Use when the task is about service boundaries, scale, resilience, multi-region, 
 
 When generating integration code:
 
-- Use Go examples by default.
+- Code is shown only when the user asks for it. When asked, use the repo language or language-agnostic pseudocode; do not impose Go on a non-Go repo. Recommend tool categories before specific packages.
 - Use CloudEvents envelope fields and semantic channel names.
 - Propagate OpenTelemetry trace context on every hop.
 - Make retries, DLQs, idempotency, ack/commit, and shutdown visible.
 - Use Outbox for DB write + publish; use Inbox/dedup for consuming side effects.
 - Keep routers/translators declarative; keep business logic in consumers/workflows.
 - On AWS, check visibility timeout, partial batch response, EventBridge archive/replay, DLQ owner/redrive, Step Functions compensation, IAM least privilege, and DynamoDB conditional idempotency.
-- Load [`reference/go-examples.md`](./reference/go-examples.md) for production-oriented snippets.
+- Load [`reference/go-examples.md`](./reference/go-examples.md) only when the user explicitly requests Go boundary snippets.
 
 ## Top Anti-Patterns
 

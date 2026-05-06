@@ -4,7 +4,7 @@
   <img src="./logo.jpg" alt="Distributed Systems Patterns logo" width="600">
 </p>
 
-An AI-agent skill for designing, implementing, documenting, and reviewing distributed systems, integration, messaging, event-driven architecture, microservices, enterprise scaling, resilience, cloud platforms, and cross-service workflow code.
+An AI-agent skill for making distributed-systems decisions: design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions for event-driven, microservice, integration, scaling, resilience, and multi-region work. Default outputs are architectural artifacts, not implementation code; specific library choices stay with the team.
 
 ## Install
 
@@ -60,7 +60,7 @@ For a full walkthrough — install verification, a cold-start prompt, and the or
 - OpenCode - `~/.config/opencode/skills/distributed-systems-patterns` symlink, or per-project. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
 - Cursor - per-repo project rule under `.cursor/rules/`. Not auto-installed. See [`docs/cursor-setup.md`](docs/cursor-setup.md).
 
-It combines modern integration, messaging, event-driven architecture, workflow, distributed systems, platform engineering, and enterprise operations guidance: Kafka/Redpanda, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus/Event Grid, NATS, Pulsar, Debezium, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal, Step Functions, Camunda, Kubernetes, KEDA, service mesh, Envoy, Dapr, caching, sharding, multi-region, SLOs, and enterprise governance. Code examples are Go-first.
+It combines modern integration, messaging, event-driven architecture, workflow, distributed systems, platform engineering, and enterprise operations guidance: Kafka/Redpanda, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus/Event Grid, NATS, Pulsar, Debezium, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal, Step Functions, Camunda, Kubernetes, KEDA, service mesh, Envoy, Dapr, caching, sharding, multi-region, SLOs, and enterprise governance. Code examples in the reference files are illustrative; the skill recommends tool categories, not specific packages.
 
 ## What the skill makes agents do
 
@@ -71,7 +71,7 @@ When activated, the agent must:
 3. Answer distributed-systems questions when the risk is service boundaries, scale, consistency, resilience, multi-region, or enterprise operations.
 4. Flag anti-patterns such as dual-write, missing idempotency, unbounded retries, ack-before-commit, DLQs with no owner, distributed monoliths, retry storms, and unbounded queues.
 5. Map the pattern to modern tooling.
-6. Generate production-oriented Go examples unless the repository is clearly in another language.
+6. Default to architectural artifacts (decisions, contracts, runbooks); show code only when explicitly asked, in the repo's language, library-agnostic where possible.
 7. Add pattern comments in integration code, for example `// Pattern: Transactional Outbox - avoids dual-write`.
 8. Use the review checklist before calling a change production-ready.
 

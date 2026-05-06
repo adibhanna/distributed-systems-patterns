@@ -1,18 +1,20 @@
 # Non-Go Pointers
 
-Use this when the target codebase is Java, TypeScript/Node, or Python, and the canonical Go examples in `reference/go-examples.md` need to be mapped to a different stack. The patterns are unchanged; only the libraries and idiomatic shapes differ.
+Use this when the project is in a non-Go language. The patterns are identical; only the libraries differ. This file lists *options* per language ecosystem - it does not prescribe which to use. The canonical Go examples in `reference/go-examples.md` map to a different stack here; pick libraries that fit your team's existing investments.
 
-## Java (Spring Boot)
+## Java
 
-Idempotent Receiver. Put the dedup check in the listener, before the business call. Use a Spring `@Transactional` method that inserts into an `inbox` table with a unique constraint on `(consumer_name, event_source, event_id)`; let the duplicate-key exception short-circuit the call. Libraries: Spring Data JPA, Flyway/Liquibase for the inbox migration.
+Libraries you might consider:
 
-Outbox approach. Spring Modulith ships an outbox abstraction (`@ApplicationModuleListener`) that writes the event in the same transaction as the domain change. For Kafka specifically, the Debezium Outbox Event Router consumes the outbox table and publishes to topics. Spring Cloud Stream Outbox is also viable for non-CDC paths.
+Idempotent Receiver. Put the dedup check in the listener, before the business call. Common Java options for Kafka consumers include Spring Kafka, Spring Cloud Stream, and the official Apache Kafka client; for inbox persistence, ORMs such as Spring Data JPA / Hibernate / jOOQ all work, with Flyway or Liquibase for the migration. The pattern is: insert into an `inbox` table with a unique constraint on `(consumer_name, event_source, event_id)` and let the duplicate-key exception short-circuit the call.
 
-Consumer endpoint. `@KafkaListener` for Kafka, `@RabbitListener` for RabbitMQ, `@SqsListener` (Spring Cloud AWS) for SQS.
+Outbox approach. Spring Modulith ships an outbox abstraction (`@ApplicationModuleListener`) that writes the event in the same transaction as the domain change; Spring Cloud Stream also offers an outbox binder for non-CDC paths. For CDC-driven publishing, the Debezium Outbox Event Router consumes the outbox table and publishes to topics. Pick based on your team's existing stack.
 
-Process Manager / saga. Temporal Java SDK is the safest default. Camunda 8 Java client works for BPMN-modeled processes. Avoid hand-rolled saga state machines on top of Spring's transaction manager — they fail in subtle ways across restarts.
+Consumer endpoint. Common annotations: `@KafkaListener` (Spring Kafka), `@RabbitListener` (Spring AMQP), `@SqsListener` (Spring Cloud AWS), or hand-written consumer loops with the official Apache Kafka client.
 
-Minimal consumer skeleton:
+Process Manager / saga. Options include the Temporal Java SDK, Camunda 8 Java client (for BPMN-modeled processes), and Axon Framework's saga support. Avoid hand-rolled saga state machines on top of Spring's transaction manager - they fail in subtle ways across restarts.
+
+Minimal consumer skeleton (uses Spring Kafka for illustration; the same pattern works with Spring Cloud Stream or the official Apache Kafka client):
 
 ```java
 @KafkaListener(topics = "orders.placed.v1", groupId = "inventory-consumer")
@@ -28,17 +30,19 @@ public void onOrderPlaced(ConsumerRecord<String, OrderPlaced> record) {
 }
 ```
 
-## TypeScript / Node (NestJS)
+## TypeScript / Node
 
-Idempotent Receiver. Put the dedup in a guard or interceptor that wraps the message handler; persist via the project's ORM (Prisma, TypeORM, Drizzle) using `INSERT ... ON CONFLICT DO NOTHING`. Libraries: `nestjs-cls` for request-scoped state; the ORM itself for the unique constraint.
+Libraries you might consider:
 
-Outbox approach. `@nestjs/cqrs` plus a transactional outbox table written via Prisma/TypeORM in the same `prisma.$transaction(...)` as the domain write. For Kafka, run a small relay worker (or Debezium) that reads the outbox and publishes. Avoid `await producer.send(...)` after `await tx.commit()` — that is the dual-write the outbox exists to prevent.
+Idempotent Receiver. Put the dedup in a guard, interceptor, or middleware that wraps the message handler. Common ORMs include Prisma, TypeORM, and Drizzle - all support `INSERT ... ON CONFLICT DO NOTHING` patterns against a unique-constrained inbox table. Frameworks such as NestJS, Fastify, or hand-rolled Node services all accommodate the same pattern; `nestjs-cls` (or the equivalent in your framework) helps with request-scoped state.
 
-Consumer endpoint. `@MessagePattern` (NestJS microservices) for the supported transports. For Kafka, prefer KafkaJS directly with a thin NestJS module wrapper; for SQS, `@ssut/nestjs-sqs`.
+Outbox approach. Write a transactional outbox table inside the same DB transaction as the domain write (e.g., `prisma.$transaction(...)`, TypeORM `QueryRunner`, or Drizzle's transaction API), then have a relay worker or Debezium publish the rows. Avoid `await producer.send(...)` after `await tx.commit()` - that is the dual-write the outbox exists to prevent.
 
-Process Manager / saga. Temporal TypeScript SDK is the safest default. `nestjs-saga` works for in-process orchestration but does not survive restarts the way Temporal does.
+Consumer endpoint. Common Kafka clients in Node include KafkaJS, `@confluentinc/kafka-javascript`, and `node-rdkafka`. NestJS users can use `@MessagePattern` for supported transports; for SQS, options include `@ssut/nestjs-sqs` or the AWS SDK directly.
 
-Minimal consumer skeleton:
+Process Manager / saga. Options include the Temporal TypeScript SDK, `nestjs-saga` (in-process orchestration only - does not survive restarts), and AWS Step Functions called from your service. Pick based on durability requirements.
+
+Minimal consumer skeleton (uses NestJS + KafkaJS for illustration; the same pattern works with Fastify + `@confluentinc/kafka-javascript` or any equivalent combination):
 
 ```typescript
 @Controller()
@@ -52,17 +56,19 @@ export class OrderConsumer {
 }
 ```
 
-## Python (FastAPI / Async)
+## Python
 
-Idempotent Receiver. Put the dedup in the consumer coroutine before the business call. Use SQLAlchemy with `INSERT ... ON CONFLICT DO NOTHING` (Postgres) and a unique constraint on the inbox table. Libraries: SQLAlchemy 2.x, Alembic for migrations.
+Libraries you might consider:
 
-Outbox approach. SQLAlchemy plus a hand-rolled outbox table is the most common. The `transactional-outbox` package and `dddpy` examples exist; they are thin and worth reading rather than depending on. For Kafka, run a relay worker built on `aiokafka` or `confluent-kafka-python`.
+Idempotent Receiver. Put the dedup in the consumer coroutine before the business call. Common Python ORMs (SQLAlchemy 2.x, Tortoise, Django ORM, Piccolo) all support an inbox table with a unique constraint and an `INSERT ... ON CONFLICT DO NOTHING` (or equivalent) pattern; pair with Alembic, Django migrations, or your team's chosen migration tool.
 
-Consumer endpoint. `aiokafka` for asyncio-native Kafka; `confluent-kafka-python` for the broader feature surface (transactions, exactly-once support). For SQS, `aioboto3` with manual long-polling.
+Outbox approach. A hand-rolled outbox table written via your ORM in the same DB transaction as the domain change is the most common shape. Open-source helpers such as `transactional-outbox` and `dddpy` examples exist - they are thin and worth reading rather than necessarily depending on. For Kafka, run a relay worker on whichever Kafka client your team prefers (e.g., `aiokafka`, `confluent-kafka-python`, `kafka-python`).
 
-Process Manager / saga. Temporal Python SDK is the safest default. Camunda 8 has a Python client. Avoid building a saga around Celery — Celery's retry semantics are not the same as a workflow engine's deterministic replay.
+Consumer endpoint. Common Python Kafka clients include `aiokafka` (asyncio-native), `confluent-kafka-python` (broader feature surface, including transactions), and `kafka-python`. For SQS, `aioboto3` (async) or `boto3` (sync) with long-polling are typical. Frameworks such as FastAPI, Django, or hand-rolled async services all accommodate the same pattern.
 
-Minimal consumer skeleton:
+Process Manager / saga. Options include the Temporal Python SDK, Camunda 8's Python client, AWS Step Functions called from your service, and (for narrow cases) `Faust` for stream-processing pipelines. Avoid building a saga around Celery - Celery's retry semantics are not the same as a workflow engine's deterministic replay.
+
+Minimal consumer skeleton (uses `aiokafka` + SQLAlchemy for illustration; the same pattern works with `confluent-kafka-python` or `kafka-python` and any ORM):
 
 ```python
 async def consume() -> None:

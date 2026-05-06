@@ -52,7 +52,9 @@ Reliability:
 Anti-patterns: db.save() then broker.publish() would be a dual-write
 Modern realization: Postgres outbox + Debezium -> Kafka, CloudEvents 1.0.2,
                     AsyncAPI 3.1, OpenTelemetry W3C Trace Context
-Implementation: Go snippets with // Pattern: ... annotations
+Decisions: pattern map, channel/ordering/idempotency-key choices, owner, retention
+Boundary contracts: CloudEvents envelope fields, AsyncAPI channel, schema compatibility mode
+Implementation outline: file inventory of producers/consumers/migrations to write — not inline code
 Verification: 8-question checklist + tests (idempotency, DLQ, replay)
 ```
 
@@ -61,6 +63,12 @@ If the agent goes straight to code without naming patterns or running the checkl
 ```text
 Use the distributed-systems-patterns skill: design an order-placed event flow in Go.
 ```
+
+### Architectural-first by design
+
+This skill produces decisions and contracts; code lives in source files. `/design` writes a decision doc with no inline code — patterns, channel and ordering choices, owners, alternatives, file inventory, and readiness tier. `/contract` writes schema files and AsyncAPI under `schemas/` and `asyncapi/`. `/architecture` writes ADRs and RFCs with trade-offs and rollout. `/review` evaluates a change architecturally — which patterns are touched, which contracts are affected, which checklist items are open — rather than line-by-line. `/runbook`, `/failure-mode`, `/readiness`, and `/ship` produce operational artifacts and decisions, not handlers.
+
+If you want code, ask for it explicitly: "Show me a Go boundary snippet for the idempotent receiver." The skill will produce a minimal, library-agnostic sample at the pattern boundary — not a full production handler — and use the repo language when one is clear.
 
 ## 3. Walkthrough: shipping order fulfillment
 

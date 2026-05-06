@@ -101,6 +101,8 @@ Never redrive a DLQ blindly. Fix the cause or add a filter before replay.
 
 ## Go service standards
 
+These standards are Go-flavored; the same checklist (context propagation, structured logging, OpenTelemetry, bounded concurrency, graceful shutdown) applies in any language - swap the language-specific tools.
+
 Generated Go integration code should include:
 
 - `context.Context` on every I/O boundary.

@@ -51,6 +51,8 @@ type LLMRetryPolicy struct {
 
 Long-context tasks - RAG over many docs, multi-step agents, extraction pipelines - consume tokens unevenly across attempts. Capping by attempt count is wrong because one expensive retry on a 200k-token prompt can blow the budget that three small retries would not. Cap by tokens spent, not attempts.
 
+Pseudocode (shown in Go-style for concision; the same shape works in any language):
+
 ```go
 // Pattern: Backpressure - bound retry by tokens spent, not by attempt count.
 type LLMTokenBudget struct {
@@ -70,6 +72,8 @@ func (b *LLMTokenBudget) TryCharge(in, out int) error {
 
 var ErrBudgetExhausted = errors.New("llm token budget exhausted")
 ```
+
+The library choice (which HTTP client, which retry helper, which queue client) is a team decision.
 
 Call site: estimate input tokens from the prompt (tokenizer count or a fast heuristic), call `TryCharge` BEFORE invoking the model with the estimate, then reconcile actual usage from the response. For Anthropic that is `response.Usage.InputTokens` and `response.Usage.OutputTokens`; for OpenAI it is `response.usage.prompt_tokens` and `response.usage.completion_tokens`. Reconciliation matters - estimates drift, especially on tool-use turns where the model echoes prior messages.
 
@@ -107,7 +111,7 @@ Quarantined outputs go to a review queue, not a redrive loop. Auto-redriving an 
 
 ## Streaming token handoff
 
-Stream from the provider through your service to the client using server-sent events or gRPC server-streaming. Two rules:
+Stream from the provider through your service to the client using whichever HTTP-streaming primitive your platform provides (server-sent events, gRPC server-streaming, WebSocket frames). Two rules:
 
 1. The server-side connection from your service to the provider is independent from the client-side connection. Either can drop without killing the other.
 2. Provide a resumable session id. If the client disconnects, the server keeps writing to a buffer (size-bounded) so the client can reconnect and resume.
