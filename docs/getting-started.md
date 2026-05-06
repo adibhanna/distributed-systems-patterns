@@ -18,9 +18,13 @@ bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
 
 A green run means the skill files are valid; a red run names what's wrong.
 
-## 2. The cold-start prompt (no command needed)
+## 2. Cold-start vs. command — when to use which
 
-The skill auto-activates on distributed-systems vocabulary. Try this:
+**Commands write files** for structured deliverables (design docs, ADRs, contract schemas, runbooks, launch decisions). Use `/design`, `/architecture`, `/contract`, `/runbook`, `/ship` whenever you want a persistent artifact in the repo.
+
+**Cold-start prompts give you guidance in chat.** The skill auto-activates on distributed-systems vocabulary and walks the patterns + reliability checklist + Go example, but does not save anything to disk unless you ask. Use cold-start when you're exploring or want to think out loud.
+
+Cold-start example:
 
 ```text
 Design an order-placed event flow in Go. Use Postgres, Kafka, CloudEvents,

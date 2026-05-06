@@ -29,7 +29,7 @@ Once all three reports are back, the main agent (not a sub-persona) synthesizes:
 
 ## Phase C - Decision and rollback
 
-Produce a single output:
+**Write the decision to `docs/launches/<feature-slug>-<YYYY-MM-DD>.md`** (use today's date in ISO format). Create `docs/launches/` if it does not exist. The decision file has this exact structure:
 
 ```markdown
 ## Ship Decision: GO | NO-GO
@@ -56,6 +56,8 @@ Produce a single output:
 - [Failure-mode report]
 - [Readiness report]
 ```
+
+After writing the file, emit a one-line confirmation in chat: `Ship decision: <GO|NO-GO>. Written to docs/launches/<slug>-<date>.md.` plus the blocker count if NO-GO. Do not paste the full decision back into chat.
 
 ## Rules
 

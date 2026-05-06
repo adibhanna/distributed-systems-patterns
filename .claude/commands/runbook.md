@@ -1,5 +1,5 @@
 ---
-description: Generate an operational runbook — DLQ, lag, replay, schema rollback, failover, stuck workflow
+description: Generate an operational runbook — written to docs/runbooks/<slug>.md
 ---
 
 Invoke the `distributed-systems-patterns` skill.
@@ -16,3 +16,9 @@ A runbook is for a paged engineer at 2am. Be specific, ordered, and safe.
 6. Define the audit trail requirements: ticket id, who ran which step, what was redriven, sample payloads handled.
 7. Add the post-incident actions: root cause, prevention item (test, alert, code change), runbook update.
 8. Validate against the runbook quality bar from `reference/operational-runbooks.md`: owner, dashboards, safety warnings, steps, stop criteria, verification, audit, follow-up.
+
+## Output
+
+**Write the runbook to `docs/runbooks/<incident-slug>.md`** (e.g. `dlq-triage-orders-placed-v1.md`, `region-failover.md`). Create `docs/runbooks/` if it does not exist. If a file with the same name exists, ask before overwriting.
+
+Emit a one-line confirmation in chat: `Runbook written to docs/runbooks/<slug>.md`. Do not paste the full runbook back into chat. If the user explicitly says "show in chat", respond conversationally instead.
