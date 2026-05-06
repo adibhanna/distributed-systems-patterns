@@ -124,11 +124,13 @@ Generated Go integration code should include:
 
 ## Production readiness levels
 
-| Level               | Meaning                            | Gate                                                                                   |
-| ------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
-| Prototype           | Pattern is named and code compiles | Reliability checklist answered in comments or design notes                             |
-| Service-ready       | Safe for shared dev/staging        | Unit tests, idempotency, bounded retry, DLQ, basic metrics                             |
-| Production-ready    | Safe for customer traffic          | Contract CI, real broker test, dashboard, alert, runbook, owner, replay/redrive tested |
-| Enterprise-critical | Regulated or revenue-critical path | SLOs, audit trail, DR plan, capacity test, security review, compatibility governance   |
+These tiers map onto the maturity-model levels in `reference/maturity-model.md` (per-service tiers vs. ordinal ladder - same evidence).
+
+| Tier                | Maturity level | Meaning                            | Gate                                                                                   |
+| ------------------- | -------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| Prototype           | Maturity 0     | Pattern is named and code compiles | Reliability checklist answered in comments or design notes                             |
+| Service-ready       | Maturity 1-2   | Safe for shared dev/staging        | Unit tests, idempotency, bounded retry, DLQ, basic metrics                             |
+| Production-ready    | Maturity 3     | Safe for customer traffic          | Contract CI, real broker test, dashboard, alert, runbook, owner, replay/redrive tested |
+| Enterprise-critical | Maturity 4     | Regulated or revenue-critical path | SLOs, audit trail, DR plan, capacity test, security review, compatibility governance   |
 
 Do not describe code as production-ready below the production-ready gate.

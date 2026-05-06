@@ -6,6 +6,38 @@
 
 A portable AI-agent skill for designing, implementing, documenting, and reviewing distributed systems, integration, messaging, event-driven architecture, microservices, enterprise scaling, resilience, cloud platforms, and cross-service workflow code.
 
+## Install (one command)
+
+Clone the repo and run the installer. It detects your tools (Claude Code, Codex, OpenCode, Continue) and creates the right symlinks idempotently.
+
+<!-- Replace <your-username> with the GitHub user/org you push this repo to. -->
+
+```bash
+git clone https://github.com/<your-username>/distributed-systems-patterns ~/.agents/skills/distributed-systems-patterns
+~/.agents/skills/distributed-systems-patterns/scripts/install.sh
+```
+
+Use `--all` to install for every supported tool whether or not its config dir exists yet. Use `--dry-run` to preview.
+
+Then verify your install:
+
+```bash
+bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
+```
+
+`validate_skill.sh` runs locally with `python3` only (no Ruby, no ripgrep), and CI runs the same validator on every push.
+
+## Manual install
+
+The installer covers the common path. For per-tool detail or non-detected tools, see:
+
+- Claude Code - `~/.claude/skills/distributed-systems-patterns` symlink. See [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
+- Codex CLI - activation block appended to `~/.codex/AGENTS.md`. See [`docs/codex-setup.md`](docs/codex-setup.md).
+- OpenCode - `~/.config/opencode/skills/distributed-systems-patterns` symlink, or per-project. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
+- Continue - `~/.continue/rules/distributed-systems-patterns.md` linked to `AGENTS.md`. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
+- Cursor - per-repo project rule under `.cursor/rules/`. Not auto-installed. See [`docs/cursor-setup.md`](docs/cursor-setup.md).
+- Aider, Cline, Gemini CLI, Windsurf, Copilot Chat, web-based agents - see [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
+
 It combines modern integration, messaging, event-driven architecture, workflow, distributed systems, platform engineering, and enterprise operations guidance: Kafka/Redpanda, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus/Event Grid, NATS, Pulsar, Debezium, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal, Step Functions, Camunda, Kubernetes, KEDA, service mesh, Envoy, Dapr, caching, sharding, multi-region, SLOs, and enterprise governance. Code examples are Go-first.
 
 ## What the skill makes agents do
@@ -74,100 +106,6 @@ skill/
 ```
 
 `SKILL.md` is the canonical skill. `AGENTS.md` mirrors the activation policy and hard rules for tools that load `AGENTS.md`. The `reference/` directory is progressive disclosure: agents load only the file needed for the current task.
-
-## Quick install
-
-Recommended global layout:
-
-```text
-~/.agents/skills/distributed-systems-patterns   # source of truth
-~/.codex/AGENTS.md                          # appended activation rules
-~/.claude/skills/distributed-systems-patterns   # symlink
-```
-
-If you are developing from this checkout, register it as your canonical skill:
-
-```bash
-mkdir -p ~/.agents/skills
-ln -s "$(pwd)" ~/.agents/skills/distributed-systems-patterns
-```
-
-If this repo is already copied into `~/.agents/skills/distributed-systems-patterns`, skip that step and create tool-specific symlinks below.
-
-## Global Install
-
-Use one canonical copy under `~/.agents/skills`, then symlink each agent to it. This keeps edits in one place.
-
-```bash
-SKILL_DIR="$HOME/.agents/skills/distributed-systems-patterns"
-
-# Codex auto-loads ~/.codex/AGENTS.md; append the activation rules to the user's global Codex agent file.
-mkdir -p ~/.codex
-cat ~/.agents/skills/distributed-systems-patterns/AGENTS.md >> ~/.codex/AGENTS.md
-
-mkdir -p "$HOME/.claude/skills"
-ln -s "$SKILL_DIR" "$HOME/.claude/skills/distributed-systems-patterns"
-```
-
-OpenCode reads project-relative `skills/<name>/SKILL.md` rather than a global skills directory; see [`docs/any-agent-setup.md`](docs/any-agent-setup.md) for the per-project recipe.
-
-For project-level agents that only auto-load `AGENTS.md`, symlink the portable entry point into the project:
-
-```bash
-ln -s "$HOME/.agents/skills/distributed-systems-patterns/AGENTS.md" ./AGENTS.md
-```
-
-If a project already has `AGENTS.md`, append a short pointer instead:
-
-```markdown
-Use the Distributed Systems Patterns skill at
-`~/.agents/skills/distributed-systems-patterns/AGENTS.md` for distributed systems,
-messaging, resilience, workflow, architecture, and production-readiness work.
-```
-
-Test the global install in a new agent session:
-
-```text
-Use the distributed-systems-patterns skill to create an architecture doc for an order fulfillment system.
-Use Go services, Postgres, Kafka, Temporal, CloudEvents, OpenTelemetry, and AWS where appropriate.
-Include alternatives, trade-offs, rollout, failure modes, and verification.
-```
-
-### Claude Code
-
-```bash
-mkdir -p ~/.claude/skills
-ln -s ~/.agents/skills/distributed-systems-patterns ~/.claude/skills/distributed-systems-patterns
-```
-
-### Codex CLI
-
-For a distributed-systems-heavy, integration-heavy, or architecture-heavy project:
-
-```bash
-ln -s ~/.agents/skills/distributed-systems-patterns/AGENTS.md ./AGENTS.md
-ln -s ~/.agents/skills/distributed-systems-patterns/reference ./reference
-```
-
-For one task:
-
-```bash
-codex "Use @~/.agents/skills/distributed-systems-patterns/AGENTS.md and @~/.agents/skills/distributed-systems-patterns/reference/checklist.md \
-to review my Kafka consumer for production readiness."
-```
-
-When developing from this checkout, substitute `$(pwd)` for `~/.agents/skills/distributed-systems-patterns` in the commands above.
-
-### Cursor
-
-```bash
-mkdir -p .cursor/rules
-cp ~/.agents/skills/distributed-systems-patterns/SKILL.md .cursor/rules/distributed-systems-patterns.mdc
-```
-
-### OpenCode and other agents
-
-See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
 
 ## Example prompt
 
