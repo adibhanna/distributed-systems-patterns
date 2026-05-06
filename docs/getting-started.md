@@ -76,7 +76,7 @@ If the agent goes straight to code without naming patterns or running the checkl
 Use the distributed-systems-patterns skill: design an order-placed event flow in Go.
 ```
 
-### A connected system, not eight standalone commands
+### A connected system, not nine standalone commands
 
 Every artifact the skill writes lands inside one feature folder: `docs/features/<slug>/`. That folder holds the design, ADRs, contracts, schemas, AsyncAPI specs, runbooks, launches, and a README index — all as siblings. The per-feature README aggregates every artifact for one feature plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. The system catalog at `docs/system/catalog.md` indexes every feature; platform-wide ADRs live next to it under `docs/system/adrs/`.
 
@@ -94,15 +94,28 @@ docs/system/catalog.md
 
 Two clicks from "the system" to "this channel's runbook".
 
+### Shared knowledge across features
+
+Beyond the per-feature folder, the skill maintains shared knowledge at `docs/system/` - things that apply to every feature, not just one. Examples:
+
+- `docs/system/standards/observability.md` - "every service emits OpenTelemetry traces"
+- `docs/system/standards/channel-naming.md` - "channels follow `<domain>.<event>.v<N>`"
+- `docs/system/topology.md` - team ownership map across features
+- `docs/system/runbooks/broker-outage.md` - what to do when the platform broker fails
+
+The rule: reference, don't restate. When you write a feature design that observes the platform observability standard, link to `../../system/standards/observability.md` rather than restating the rule. Each per-feature README's `## Shared references` section lists the platform docs that apply to that feature.
+
+To create a shared standard explicitly: `/standard <topic>` writes to `docs/system/standards/<topic>.md`. Use `/architecture` with platform-wide scope for cross-feature ADRs (broker choice, mesh policy). Use `/runbook` with platform scope for incidents affecting the whole platform (broker outage, region failover).
+
 ### Everything beyond code
 
 Each artifact carries a `## System concerns` block covering owner team, tenancy, cost owner, compliance, capacity, DR posture, and lifecycle. Unknown fields stay as `<TBD>` so the question is forced. The skill is for the layer beyond code: org topology, tenant isolation, compliance lineage, capacity, cost ownership, DR, deprecation - alongside the patterns and contracts.
 
 If you want code, ask for it explicitly: "Show me a Go boundary snippet for the idempotent receiver." The skill produces a minimal, library-agnostic sample at the pattern boundary, not a full production handler.
 
-## 3. Walkthrough: shipping order fulfillment
+## 3. Walkthrough: shipping order fulfillment and locking in shared knowledge
 
-A complete journey — pick patterns, define contracts, implement, review, ship. Each step uses one slash command.
+A complete journey — pick patterns, define contracts, implement, review, ship, then promote a recurring rule to a platform standard. Each step uses one slash command.
 
 ### Step 1 — `/design` — pick the patterns
 
@@ -286,11 +299,30 @@ The launch decision file follows this structure (Summary + System concerns + the
 - Contracts: `../contracts/orders.placed.v1.md`
 - Runbooks: `../runbooks/dlq-orders-placed-v1.md`
 - Feature index: `../README.md`
+
+## Shared references
+- Observability standard: `../../system/standards/observability.md`
+- Channel-naming standard: `../../system/standards/channel-naming.md`
+- Broker outage runbook: `../../system/runbooks/broker-outage.md`
 ```
 
 `/ship` also updates the per-feature README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/features/order-fulfillment/launches/2026-05-06.md. 2 blockers.`
 
 The fan-out gives you three independent perspectives in one pass instead of running each command serially.
+
+### Step 8 — `/standard` — lock in a platform convention
+
+Once a pattern shows up in three feature designs (e.g. all three say "we emit OpenTelemetry traces"), promote it to a shared standard:
+
+```text
+/standard observability — every service must emit OpenTelemetry traces with
+traceparent propagated; metrics for lag/age/DLQ depth; structured logs with
+correlation_id. Owner: Platform Engineering.
+```
+
+The command writes `docs/system/standards/observability.md` (Status, Date, Owner, Rule, Requirements, Enforcement, Exceptions) and adds a row to `docs/system/catalog.md` Cross-cutting concerns. Every feature README's `## Shared references` section can now link to this standard instead of restating it.
+
+Confirmation: `Standard written to docs/system/standards/observability.md`.
 
 ## 4. Command reference
 
@@ -299,13 +331,14 @@ The fan-out gives you three independent perspectives in one pass instead of runn
 | `/design` | Pick patterns and boundaries; write a service design with system concerns | yes (under `docs/features/<slug>/`) | `/design Add a notifications service that consumes orders.placed.v1 and orders.cancelled.v1. Owner: Comms team.` |
 | `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention | yes (3 files under `docs/features/<slug>/`) | `/contract Design payments.authorized.v1. Owner: Payments. Per-account ordering.` |
 | `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution | yes (under `docs/features/<slug>/adrs/` or `docs/system/adrs/`) | `/architecture ADR for using a workflow engine vs choreography for the refund flow.` |
-| `/runbook` | Operational artifact for an incident type tied to a service or channel | yes (under `docs/features/<slug>/runbooks/`) | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
+| `/standard` | Platform convention every feature follows | yes (under `docs/system/standards/<topic>.md`) | `/standard observability — every service emits OpenTelemetry traces.` |
+| `/runbook` | Operational artifact for an incident type tied to a service, channel, or the platform | yes (under `docs/features/<slug>/runbooks/` or `docs/system/runbooks/`) | `/runbook for DLQ triage on orders.placed.v1.dlq.` |
 | `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius | no (chat) | `/review the changes in src/payments/.` |
 | `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat) | `/failure-mode for the new high-volume telemetry pipeline.` |
 | `/readiness` | Map a service or change to a readiness tier; walk technical and system-concerns evidence | no (chat) | `/readiness for the inventory service before customer rollout.` |
 | `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback | yes (under `docs/features/<slug>/launches/`) | `/ship the payments service for the v2.0 release.` |
 
-Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/ship`) also updates `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
+Every artifact-writing command (`/design`, `/contract`, `/architecture`, `/standard`, `/runbook`, `/ship`) also updates `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable.
 
 The Claude Code plugin namespaces these as `/distributed-systems-patterns:design`, `:review`, etc. The bare `/design` works when the plugin is the only source for that command name; the namespaced form always works.
 

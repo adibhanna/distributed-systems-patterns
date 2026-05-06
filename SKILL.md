@@ -23,7 +23,31 @@ Distributed-systems engineers, tech leads, staff/principal engineers, platform t
 
 **Threshold for invoking the full skill**: at least two services or two teams must coordinate; or the work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model; or the request explicitly asks for an ADR/RFC/runbook/launch decision. If none of these apply, decline the full pipeline and respond directly with a simpler answer; tell the user the skill would be overkill for their case.
 
+## Shared knowledge across features
+
+Some knowledge applies to every feature, not just one. The skill organizes this under `docs/system/`:
+
+- `docs/system/catalog.md` - the service/feature registry
+- `docs/system/adrs/` - **platform-wide** decisions (broker choice, mesh policy, schema-registry vendor, multi-region strategy)
+- `docs/system/runbooks/` - **platform-wide** runbooks (broker outage, schema-registry rollback, region-wide failover)
+- `docs/system/standards/` - conventions every feature must follow (channel naming, observability, security baseline, deployment, on-call expectations)
+- `docs/system/glossary.md` - shared vocabulary (domain terms used by multiple features)
+- `docs/system/topology.md` - team ownership map and Conway-Law boundaries
+- `docs/system/capacity.md` - platform capacity envelope (broker throughput, total cost budget, regional limits)
+- `docs/system/compliance.md` - PII / GDPR / SOC2 / data-residency baseline that all features inherit
+- `docs/system/dr.md` - DR strategy and region-failover plan that applies across features
+
+**The principle: reference, don't restate.** When a feature design touches a shared concern (e.g. "follows the platform observability standard"), link to the shared doc rather than copy-pasting the rule into every feature. If the same fact appears in three feature docs, it belongs in `docs/system/standards/` instead.
+
+Feature artifacts cross-link into `docs/system/` using `../../system/<path>` (one `..` for the feature subdir, one for `features/`). The per-feature README's `## Shared references` section names which platform docs apply to this feature.
+
 This skill is an operating procedure. Load only the reference file needed:
+
+**Operating context loaded automatically when relevant** (these live in the user's repo, not the skill):
+- `docs/system/standards/*.md` - platform conventions (when a feature artifact would touch a convention)
+- `docs/system/adrs/*.md` - platform-wide decisions (when a feature artifact must comply)
+- `docs/system/glossary.md` - shared vocabulary (when domain terms might be ambiguous)
+- `docs/system/topology.md` - team ownership map (when ownership decisions matter)
 
 **Architectural and decision references** (load when designing, reviewing, or documenting):
 - `reference/catalog.md` - systems, messaging, workflow, and resilience patterns with modern realizations.
@@ -130,6 +154,16 @@ When this skill activates, every answer must include or perform these steps:
     - **DR posture**: <RPO / RTO / region strategy>
     - **Lifecycle**: <created date; deprecation trigger; replacement plan>
 
+    ## Shared references
+
+    Platform docs that apply to this feature. Link rather than restate.
+
+    - **Standards followed**: <list relevant docs/system/standards/*.md by relative path, e.g. `../../system/standards/channel-naming.md`>
+    - **Glossary**: <link to docs/system/glossary.md if relevant terms apply>
+    - **Compliance baseline**: <link to docs/system/compliance.md if applicable>
+    - **DR plan**: <link to docs/system/dr.md if this feature is in DR scope>
+    - **Platform ADRs that govern this feature**: <list applicable docs/system/adrs/*.md>
+
     ## Artifacts
     - **Design**: <link to design.md or "(not yet written)">
     - **ADRs**: <list of links to adrs/NNNN-<title>.md or "(none)">
@@ -148,6 +182,8 @@ When this skill activates, every answer must include or perform these steps:
     ## Channels owned
     - <channel-name>: <produced | consumed | both>. See <link to contract>.
     ```
+
+    > If a feature genuinely needs a value that diverges from a shared standard, document the divergence in the feature's README under `## System concerns` rather than silently overriding. If many features diverge the same way, the standard itself is wrong - update it instead.
 
     Links inside the per-feature README are relative to the README itself: `design.md`, `adrs/NNNN-<title>.md`, `contracts/<channel>.md`, `runbooks/<incident>.md`, `launches/<date>.md` work directly without `../` traversal.
 
@@ -175,15 +211,27 @@ When this skill activates, every answer must include or perform these steps:
 
     ## Cross-cutting concerns
 
-    - **Org topology**: links to docs/system/org-topology.md if it exists.
-    - **Capacity envelope**: link to docs/system/capacity.md if it exists.
-    - **Compliance map**: link to docs/system/compliance.md if it exists.
-    - **DR posture**: link to docs/system/dr.md if it exists.
+    | Concern | Doc | Status |
+    | --- | --- | --- |
+    | Org topology | [topology.md](topology.md) | <Draft / Active / TBD> |
+    | Capacity envelope | [capacity.md](capacity.md) | <status> |
+    | Compliance baseline | [compliance.md](compliance.md) | <status> |
+    | DR strategy | [dr.md](dr.md) | <status> |
+    | Glossary | [glossary.md](glossary.md) | <status> |
+    | Standards | [standards/](standards/) | <count> standards documented |
+    | Platform-wide ADRs | [adrs/](adrs/) | <count> decisions, latest <NNNN> |
+    | Platform runbooks | [runbooks/](runbooks/) | <count> runbooks |
+
+    Rows should be removed if the corresponding doc/folder does not exist (a row with link `topology.md` requires the file to exist; otherwise omit the row entirely).
     ```
 
-    Sort the table alphabetically by slug. Do not invent entries for features that have no per-feature README. The catalog is a registry of what exists, not aspirational.
+    Sort the table alphabetically by slug. Do not invent entries for features that have no per-feature README. The catalog is a registry of what exists, not aspirational. The `/standard` and `/runbook --scope=platform` commands populate the cross-cutting concerns table as they write new files; the catalog reflects state, not aspiration.
 
     The catalog uses the term **feature** (matching the folder name `docs/features/<slug>/`) rather than "service" because a feature may span multiple services or sub-systems. The slug is the same identifier used across all artifacts for that feature.
+
+18. **Reference shared knowledge before restating it.** Before writing any feature artifact (design, contract, runbook, ADR, launch decision), Glob `docs/system/standards/*.md`, `docs/system/glossary.md`, `docs/system/compliance.md`, `docs/system/dr.md`, `docs/system/topology.md`, and `docs/system/adrs/*.md`. If a shared doc covers a concern the feature artifact would otherwise restate (e.g. observability conventions, channel-naming rules, compliance class, DR posture), reference the shared doc by path instead of copy-pasting its content. The feature's `## Shared references` section in its per-feature README captures which shared docs apply.
+
+    If a shared doc does not yet exist for a recurring concern (the same convention restated in 3+ features), surface that in chat as a recommendation: "Consider promoting <concept> to docs/system/standards/<topic>.md so all features can reference it." Do not auto-create platform docs without explicit user direction.
 
 Recommended response shape:
 

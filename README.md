@@ -30,7 +30,7 @@ Distributed-systems engineers, tech leads, staff/principal engineers, platform t
 /plugin install distributed-systems-patterns@adibhanna-distributed-systems-patterns
 ```
 
-Claude Code discovers the skill and all 8 slash commands automatically.
+Claude Code discovers the skill and all 9 slash commands automatically.
 
 ### Option B — One-command symlink install (Claude Code, Codex, OpenCode)
 
@@ -53,16 +53,17 @@ bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
 
 Once installed, these commands invoke the skill in opinionated ways:
 
-| Command | Role in the system |
-| --- | --- |
-| `/design` | Pick patterns and boundaries; write a service design with system concerns. |
-| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention. |
-| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution. |
-| `/runbook` | Operational artifact for an incident type tied to a service or channel. |
-| `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system-level blast radius. |
-| `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR. |
-| `/readiness` | Map a service or change to a readiness tier. Walks both technical and system-concerns evidence. |
-| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback. |
+| Command | Role in the system | Writes? |
+| --- | --- | --- |
+| `/design` | Pick patterns and boundaries; service-level design with system concerns | yes (`docs/features/<slug>/design.md`) |
+| `/contract` | Define wire contract: schemas, AsyncAPI, owner | yes (3 files under `docs/features/<slug>/`) |
+| `/architecture` | ADR / RFC / Implementation Plan, feature-scoped or platform-wide | yes (feature or `docs/system/`) |
+| `/standard` | Platform convention every feature follows | yes (`docs/system/standards/<topic>.md`) |
+| `/runbook` | Operational runbook, feature-scoped or platform-wide | yes (feature or `docs/system/runbooks/`) |
+| `/review` | Architectural review of a diff | no (chat) |
+| `/failure-mode` | Per-failure blast radius across tenants, compliance, cost, DR | no (chat) |
+| `/readiness` | Map a service or change to a readiness tier | no (chat) |
+| `/ship` | Fan-out: review + failure-mode + readiness, GO/NO-GO with rollback | yes (`docs/features/<slug>/launches/<date>.md`) |
 
 When loaded via the plugin marketplace, commands are namespaced as `/distributed-systems-patterns:<name>`.
 
@@ -130,6 +131,36 @@ Each artifact carries a `## System concerns` block covering:
 - **Lifecycle** (creation, deprecation trigger, replacement plan)
 
 Unknown fields stay as `<TBD>` rather than being omitted - the placeholder forces the question.
+
+## Shared knowledge across features
+
+Some knowledge applies to every feature: the broker the platform uses, the channel-naming convention, the observability standard, the on-call topology, the compliance baseline. Restating it in every feature design is duplication waiting to drift. The skill keeps it in one place under `docs/system/`:
+
+| Layer | Location | Examples |
+| --- | --- | --- |
+| Service registry | `docs/system/catalog.md` | One row per feature |
+| Platform-wide ADRs | `docs/system/adrs/` | Broker choice, mesh policy, schema-registry vendor |
+| Platform-wide runbooks | `docs/system/runbooks/` | Broker outage, schema-registry rollback, region-wide failover |
+| Standards / conventions | `docs/system/standards/` | Channel-naming, observability, security baseline, deployment |
+| Glossary | `docs/system/glossary.md` | Shared domain terms |
+| Topology | `docs/system/topology.md` | Team ownership map and Conway boundaries |
+| Capacity | `docs/system/capacity.md` | Platform capacity envelope |
+| Compliance | `docs/system/compliance.md` | PII / GDPR / SOC2 baseline |
+| DR | `docs/system/dr.md` | Region failover plan |
+
+**The rule: reference, don't restate.** When a feature design touches a shared concern, link to the shared doc rather than copy-pasting the rule. If the same fact appears in three feature docs, it belongs in `docs/system/standards/` instead.
+
+### Commands that write shared knowledge
+
+- `/standard <topic>` - writes a platform convention to `docs/system/standards/<topic>.md`. Examples: `/standard observability`, `/standard channel-naming`, `/standard security-baseline`.
+- `/architecture` (with platform-wide scope) - writes a platform-wide ADR to `docs/system/adrs/`.
+- `/runbook` (with platform-wide scope) - writes a platform runbook to `docs/system/runbooks/`.
+
+The optional top-level docs (`glossary.md`, `topology.md`, etc.) are user-created or asked for explicitly. The skill does not auto-generate them, but every feature artifact the skill writes will reference them when they exist.
+
+### How features link in
+
+Each per-feature README at `docs/features/<slug>/README.md` carries a `## Shared references` section listing which platform docs apply to that feature. Cross-link math: from a feature artifact to a shared doc is `../../system/<path>` (one `..` for the feature subdir, one for `features/`). The README aggregates links so a reader can navigate from one feature to its applicable platform standards in one click.
 
 ## Manual install (per-tool detail)
 
@@ -202,25 +233,26 @@ skill/
 │   └── migrate-layout.sh            # v0.2 -> v0.3 layout migration
 └── docs/
     ├── system/
-    │   ├── catalog.md                 # system-level feature registry
-    │   └── adrs/                      # platform-wide ADRs
-    │       └── NNNN-<title>.md
+    │   ├── catalog.md
+    │   ├── adrs/                          # platform-wide ADRs
+    │   ├── runbooks/                      # platform-wide runbooks
+    │   ├── standards/                     # conventions all features follow
+    │   │   └── <topic>.md
+    │   ├── glossary.md                    # optional
+    │   ├── topology.md                    # optional
+    │   ├── capacity.md                    # optional
+    │   ├── compliance.md                  # optional
+    │   └── dr.md                          # optional
     ├── features/
-    │   └── <slug>/                    # one folder per feature/service
-    │       ├── README.md              # per-feature index (auto-updated)
+    │   └── <slug>/
+    │       ├── README.md
     │       ├── design.md
-    │       ├── adrs/                  # feature-scoped ADRs
-    │       │   └── NNNN-<title>.md
+    │       ├── adrs/
     │       ├── contracts/
-    │       │   └── <channel>.md
     │       ├── schemas/
-    │       │   └── <channel>.<ext>
     │       ├── asyncapi/
-    │       │   └── <channel>.yaml
     │       ├── runbooks/
-    │       │   └── <incident>.md
     │       └── launches/
-    │           └── <date>.md
     ├── any-agent-setup.md
     ├── claude-code-setup.md
     ├── codex-setup.md

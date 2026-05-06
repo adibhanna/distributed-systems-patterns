@@ -13,6 +13,8 @@ This skill is not 8 isolated commands; it is a connected system. Every artifact 
 - `docs/features/<slug>/README.md` aggregates a feature's info, system concerns, artifacts, dependencies, and owned channels. Sibling folders under it hold the artifacts: `design.md`, `adrs/`, `contracts/`, `schemas/`, `asyncapi/`, `runbooks/`, `launches/`.
 - `docs/system/catalog.md` lists every feature with one row each, linking to the per-feature README. Platform-wide ADRs that span features live at `docs/system/adrs/NNNN-<title>.md`.
 
+**Shared knowledge** lives at `docs/system/`. The skill writes platform-wide ADRs to `docs/system/adrs/`, platform-wide runbooks to `docs/system/runbooks/`, and platform standards to `docs/system/standards/<topic>.md`. Optional top-level docs (`glossary.md`, `topology.md`, `capacity.md`, `compliance.md`, `dr.md`) hold cross-cutting reference data. Feature artifacts reference these by relative path (`../../system/...`) rather than restating their content. Before writing a feature artifact, Glob `docs/system/` for applicable shared docs.
+
 Reader navigation: `docs/system/catalog.md` -> `docs/features/<slug>/README.md` -> any artifact under `docs/features/<slug>/{design,adrs,contracts,schemas,asyncapi,runbooks,launches}`. See SKILL.md items 16-17 for templates.
 
 Trigger signals:
@@ -36,7 +38,8 @@ Do not apply for pure local request-response, pure frontend work, single-process
 8. **For distributed-system risks, name those patterns too.** Load [`reference/distributed-systems-guide.md`](./reference/distributed-systems-guide.md) for boundaries, consistency, scaling, resilience, caching, sharding, multi-region, service mesh, SLOs, and governance.
 9. **For architecture documents, produce decision-ready artifacts.** Load [`reference/architecture-documentation.md`](./reference/architecture-documentation.md) for design docs, RFCs, ADRs, implementation plans, migration plans, diagrams, trade-offs, rollout, and verification.
 10. **For production usage, use practical guides.** Load scenario playbooks, failure modes, security/compliance, testing strategy, operational runbooks, maturity model, or platform mappings when they match the request.
-11. **Keep the system navigable.** After writing any artifact, update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
+11. **Reference shared knowledge before restating.** Glob `docs/system/standards/`, `docs/system/glossary.md`, `docs/system/compliance.md`, `docs/system/dr.md`, `docs/system/topology.md` before writing feature artifacts; link them rather than copy-pasting their content.
+12. **Keep the system navigable.** After writing any artifact, update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
 
 ## Pattern Selection Excerpt
 
