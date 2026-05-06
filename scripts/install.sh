@@ -21,7 +21,7 @@ Options:
   --dry-run  Print what would happen without modifying the filesystem.
   -h, --help Print this help.
 
-Supported: Claude Code, OpenCode, Continue, Codex (activation pointer).
+Supported: Claude Code, OpenCode, Codex (activation pointer).
 For Cursor, see docs/cursor-setup.md (per-repo rule, not global).
 EOF
 }
@@ -97,14 +97,6 @@ install_opencode() {
     fi
 }
 
-install_continue() {
-    if [[ -d "$HOME/.continue" || $ALL -eq 1 ]]; then
-        link_to "Continue" "$HOME/.continue/rules/$SKILL_NAME.md" "$CANONICAL/AGENTS.md"
-    else
-        log_skip "Continue (no ~/.continue directory)"
-    fi
-}
-
 install_codex() {
     local agents_md="$HOME/.codex/AGENTS.md"
     local begin="# >>> $SKILL_NAME >>>"
@@ -135,7 +127,6 @@ main() {
     ensure_canonical
     install_claude_code
     install_opencode
-    install_continue
     install_codex
     log_skip "Cursor (per-repo rule; see docs/cursor-setup.md)"
     printf '\nDone. Verify with:\n  bash %s/scripts/validate_skill.sh\n' "$SKILL_DIR"

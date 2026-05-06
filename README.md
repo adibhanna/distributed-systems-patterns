@@ -4,11 +4,11 @@
   <img src="./logo.jpg" alt="Distributed Systems Patterns logo" width="600">
 </p>
 
-A portable AI-agent skill for designing, implementing, documenting, and reviewing distributed systems, integration, messaging, event-driven architecture, microservices, enterprise scaling, resilience, cloud platforms, and cross-service workflow code.
+An AI-agent skill for designing, implementing, documenting, and reviewing distributed systems, integration, messaging, event-driven architecture, microservices, enterprise scaling, resilience, cloud platforms, and cross-service workflow code.
 
 ## Install (one command)
 
-Clone the repo and run the installer. It detects your tools (Claude Code, Codex, OpenCode, Continue) and creates the right symlinks idempotently.
+Clone the repo and run the installer. It detects your tools (Claude Code, Codex, OpenCode) and creates the right symlinks idempotently.
 
 ```bash
 git clone https://github.com/adibhanna/distributed-systems-patterns ~/.agents/skills/distributed-systems-patterns
@@ -32,9 +32,7 @@ The installer covers the common path. For per-tool detail or non-detected tools,
 - Claude Code - `~/.claude/skills/distributed-systems-patterns` symlink. See [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
 - Codex CLI - activation block appended to `~/.codex/AGENTS.md`. See [`docs/codex-setup.md`](docs/codex-setup.md).
 - OpenCode - `~/.config/opencode/skills/distributed-systems-patterns` symlink, or per-project. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
-- Continue - `~/.continue/rules/distributed-systems-patterns.md` linked to `AGENTS.md`. See [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
 - Cursor - per-repo project rule under `.cursor/rules/`. Not auto-installed. See [`docs/cursor-setup.md`](docs/cursor-setup.md).
-- Aider, Cline, Gemini CLI, Windsurf, Copilot Chat, web-based agents - see [`docs/any-agent-setup.md`](docs/any-agent-setup.md).
 
 It combines modern integration, messaging, event-driven architecture, workflow, distributed systems, platform engineering, and enterprise operations guidance: Kafka/Redpanda, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus/Event Grid, NATS, Pulsar, Debezium, CloudEvents, AsyncAPI, Schema Registry, OpenTelemetry, Temporal, Step Functions, Camunda, Kubernetes, KEDA, service mesh, Envoy, Dapr, caching, sharding, multi-region, SLOs, and enterprise governance. Code examples are Go-first.
 

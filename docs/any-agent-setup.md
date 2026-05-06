@@ -47,13 +47,6 @@ cp ~/.agents/skills/distributed-systems-patterns/AGENTS.md .clinerules
 
 For implementation-heavy work, also attach `reference/go-examples.md` in the chat.
 
-## Continue
-
-```bash
-mkdir -p ~/.continue/rules
-cp ~/.agents/skills/distributed-systems-patterns/AGENTS.md ~/.continue/rules/distributed-systems-patterns.md
-```
-
 ## Gemini CLI
 
 Gemini CLI reads `GEMINI.md`:
