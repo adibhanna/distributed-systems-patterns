@@ -51,6 +51,8 @@ Once installed, these commands invoke the skill in opinionated ways:
 
 When loaded via the plugin marketplace, commands are namespaced as `/distributed-systems-patterns:<name>`.
 
+For a full walkthrough — install verification, a cold-start prompt, and the order-fulfillment scenario chained through every command — see [`docs/getting-started.md`](docs/getting-started.md).
+
 ## Manual install (per-tool detail)
 
 - Claude Code - `~/.claude/skills/distributed-systems-patterns` skill + `~/.claude/commands/distributed-systems-patterns/` commands. See [`docs/claude-code-setup.md`](docs/claude-code-setup.md).
