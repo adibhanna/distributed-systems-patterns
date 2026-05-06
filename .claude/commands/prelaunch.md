@@ -4,7 +4,7 @@ description: Fan-out parallel review + failure-mode + readiness, synthesize go/n
 
 Invoke the `distributed-systems-patterns` skill.
 
-`/ship` is a **fan-out orchestrator** for distributed-systems changes. It runs three specialist subagents in parallel against the diff/PR, then merges their reports into a single go/no-go with a rollback plan.
+`/prelaunch` is a **fan-out orchestrator** for distributed-systems changes. It runs three specialist subagents in parallel against the diff/PR, then merges their reports into a single go/no-go with a rollback plan.
 
 ## Phase A - Parallel fan-out
 
@@ -50,7 +50,7 @@ After writing the launch decision, **update the per-feature index and system cat
 - **DR posture**: <RPO | RTO | region strategy>
 - **Lifecycle**: <creation date; deprecation trigger; replacement plan>
 
-## Ship Decision
+## Launch Decision
 ### Blockers (must fix before ship)
 - [Source subagent: Critical finding + file:line]
 ### Recommended fixes (should fix before ship)

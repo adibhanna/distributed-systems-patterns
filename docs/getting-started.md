@@ -10,7 +10,7 @@ The skill is for **distributed-systems work at scale**. It earns its weight when
 - A change introduces durable infrastructure (a broker, workflow engine, schema registry, mesh, cache fleet, shard, or new consistency model).
 - The work needs decision artifacts that outlast the code (ADRs that future hires can read; runbooks that on-call engineers reach for at 2 a.m.).
 
-> **Warning: do NOT use this skill for small projects.** Running the full 11-command pipeline on a side project, hackathon, class assignment, or scrappy MVP is overengineering theater. You will produce ten markdown files for code that doesn't exist yet. The skill assumes ≥2 services, real users, real operational cost, and real failure modes worth planning around. If those don't apply yet, a regular prompt without slash commands is faster, clearer, and produces less ceremony.
+> **Warning: do NOT use this skill for small projects.** Running the full pipeline on a side project, hackathon, class assignment, or scrappy MVP is overengineering theater. You will produce ten markdown files for code that doesn't exist yet. The skill assumes ≥2 services, real users, real operational cost, and real failure modes worth planning around. If those don't apply yet, a regular prompt without slash commands is faster, clearer, and produces less ceremony.
 
 ### Concrete don't-use cases
 
@@ -49,7 +49,7 @@ A green run means the skill files are valid; a red run names what's wrong.
 
 ## 2. Cold-start vs. command — when to use which
 
-**Commands write files** for structured deliverables (design docs, ADRs, contract schemas, runbooks, launch decisions). Use `/design`, `/architecture`, `/contract`, `/runbook`, `/ship` whenever you want a persistent artifact in the repo.
+**Commands write files** for structured deliverables (design docs, ADRs, contract schemas, runbooks, launch decisions). Use `/design`, `/architecture`, `/contract`, `/runbook`, `/prelaunch` whenever you want a persistent artifact in the repo.
 
 **Cold-start prompts give you guidance in chat.** The skill auto-activates on distributed-systems vocabulary and walks the patterns + reliability checklist + decisions, but does not save anything to disk unless you ask. Use cold-start when you're exploring or want to think out loud.
 
@@ -93,7 +93,7 @@ If the agent goes straight to code without naming patterns or running the checkl
 Use the distributed-systems-patterns skill: design an order-placed event flow in Go.
 ```
 
-### A connected system, not eleven standalone commands
+### A connected system, not twelve standalone commands
 
 Every artifact the skill writes lands inside one feature folder: `docs/features/<slug>/`. That folder holds the design, ADRs, contracts, schemas, AsyncAPI specs, runbooks, launches, and a README index — all as siblings. The per-feature README aggregates every artifact for one feature plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. The system catalog at `docs/system/catalog.md` indexes every feature; platform-wide ADRs live next to it under `docs/system/adrs/`.
 
@@ -157,7 +157,7 @@ Round-2 baselines on a typical machine (after the v0.3.0 trim):
 | Step 5 `/review`         | ~1.5 min (chat only)                      |
 | Step 6 `/failure-mode`   | ~1.5 min (chat only)                      |
 | Step 7 `/readiness`      | ~1.5 min (chat only)                      |
-| Step 8 `/ship`           | ~5 min (3 parallel subagents + synthesis) |
+| Step 8 `/prelaunch`           | ~5 min (3 parallel subagents + synthesis) |
 | Step 9 `/standard`       | ~1 min                                    |
 | Step 10 second `/design` | ~2.5 min                                  |
 | Step 11 inspect          | n/a (terminal verification)               |
@@ -331,12 +331,12 @@ Output:
 
 If the readiness review surfaces system concerns the per-feature README does not yet capture, the command suggests updating `docs/features/<slug>/README.md` so future reviews start with the new facts in place.
 
-### Step 8 — `/ship` — go/no-go decision
+### Step 8 — `/prelaunch` — go/no-go decision
 
 The big one. This command spawns three subagents in parallel — review, failure-mode, readiness — then synthesizes and writes the decision to `docs/features/<slug>/launches/<YYYY-MM-DD>.md`.
 
 ```text
-/ship the order-fulfillment service for production launch
+/prelaunch the order-fulfillment service for production launch
 ```
 
 The launch decision file follows this structure (Summary + System concerns + the decision body + Related artifacts):
@@ -360,7 +360,7 @@ The launch decision file follows this structure (Summary + System concerns + the
 - **DR posture**: RPO 5 min, RTO 10 min, single-region active-passive
 - **Lifecycle**: green-field; deprecation trigger <TBD>
 
-## Ship Decision
+## Launch Decision
 
 ### Blockers (must fix before ship)
 
@@ -395,7 +395,7 @@ The launch decision file follows this structure (Summary + System concerns + the
 - Broker outage runbook: `../../system/runbooks/broker-outage.md`
 ```
 
-`/ship` also updates the per-feature README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/features/order-fulfillment/launches/2026-05-06.md. 2 blockers.`
+`/prelaunch` also updates the per-feature README (bumping `Tier` and `Last reviewed`) and the system catalog. Confirmation in chat: `Ship decision: NO-GO. Written to docs/features/order-fulfillment/launches/2026-05-06.md. 2 blockers.`
 
 The fan-out gives you three independent perspectives in one pass instead of running each command serially.
 
@@ -500,9 +500,9 @@ That's the connected system: per-feature folders aggregate everything for one fe
 | `/review`       | Architectural review of a diff: patterns, contracts, anti-patterns, system blast radius           | no (chat)                                                               | `/review the changes in src/payments/.`                                                                          |
 | `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR | no (chat)                                                               | `/failure-mode for the new high-volume telemetry pipeline.`                                                      |
 | `/readiness`    | Map a service or change to a readiness tier; walk technical and system-concerns evidence          | no (chat)                                                               | `/readiness for the inventory service before customer rollout.`                                                  |
-| `/ship`         | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback            | yes (under `docs/features/<slug>/launches/`)                            | `/ship the payments service for the v2.0 release.`                                                               |
+| `/prelaunch`         | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback            | yes (under `docs/features/<slug>/launches/`)                            | `/prelaunch the payments service for the v2.0 release.`                                                               |
 
-Every artifact-writing command (`/design`, `/contract`, `/implement`, `/test`, `/architecture`, `/standard`, `/runbook`, `/ship`) writes to predictable paths and most also update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. `/implement` and `/test` write source/test files; the others write architectural artifacts.
+Every artifact-writing command (`/design`, `/contract`, `/implement`, `/test`, `/architecture`, `/standard`, `/runbook`, `/prelaunch`) writes to predictable paths and most also update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. `/implement` and `/test` write source/test files; the others write architectural artifacts.
 
 The Claude Code plugin namespaces these as `/distributed-systems-patterns:design`, `:review`, etc. The bare `/design` works when the plugin is the only source for that command name; the namespaced form always works.
 

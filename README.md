@@ -16,7 +16,7 @@ Distributed-systems engineers, tech leads, staff/principal engineers, platform t
 - A change introduces durable infrastructure (a broker, workflow engine, schema registry, mesh, cache fleet, shard, or new consistency model).
 - The work needs decision artifacts that outlast the code (ADRs that future hires can read; runbooks that on-call engineers reach for at 2 a.m.).
 
-> **Warning: do NOT use this skill for small projects.** Running the full 11-command pipeline on a side project, hackathon, class assignment, or scrappy MVP is overengineering theater. You will produce ten markdown files for code that doesn't exist yet. The skill assumes ≥2 services, real users, real operational cost, and real failure modes worth planning around. If those don't apply yet, a regular prompt without slash commands is faster, clearer, and produces less ceremony.
+> **Warning: do NOT use this skill for small projects.** Running the full pipeline on a side project, hackathon, class assignment, or scrappy MVP is overengineering theater. You will produce ten markdown files for code that doesn't exist yet. The skill assumes ≥2 services, real users, real operational cost, and real failure modes worth planning around. If those don't apply yet, a regular prompt without slash commands is faster, clearer, and produces less ceremony.
 
 ### Concrete don't-use cases
 
@@ -57,7 +57,7 @@ When activated on a request that doesn't meet the threshold, the skill is config
 /plugin install distributed-systems-patterns@adibhanna-distributed-systems-patterns
 ```
 
-Claude Code discovers the skill and all 11 slash commands automatically.
+Claude Code discovers the skill and all 12 slash commands automatically.
 
 ### Option B — One-command symlink install (Claude Code, Codex, OpenCode)
 
@@ -78,21 +78,84 @@ bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
 
 ## Slash commands
 
-Once installed, these commands invoke the skill in opinionated ways:
+The skill is a **lifecycle**, not a checklist. There are two ways to run it:
 
-| Command | Role in the system | Writes? |
-| --- | --- | --- |
-| `/design` | Pick patterns and boundaries; service-level design with system concerns | yes (`docs/features/<slug>/design.md`) |
-| `/contract` | Define wire contract: schemas, AsyncAPI, owner | yes (3 files under `docs/features/<slug>/`) |
-| `/implement` | Generate code from existing design + contracts + standards | yes (source files at paths named in design's File and component plan) |
-| `/test` | Generate tests grounded in contracts + design (idempotency, retry, DLQ, replay, contract compatibility) | yes (test files alongside source) |
-| `/architecture` | ADR / RFC / Implementation Plan, feature-scoped or platform-wide | yes (feature or `docs/system/`) |
-| `/standard` | Platform convention every feature follows | yes (`docs/system/standards/<topic>.md`) |
-| `/runbook` | Operational runbook, feature-scoped or platform-wide | yes (feature or `docs/system/runbooks/`) |
-| `/review` | Architectural review of a diff | no (chat) |
-| `/failure-mode` | Per-failure blast radius across tenants, compliance, cost, DR | no (chat) |
-| `/readiness` | Map a service or change to a readiness tier | no (chat) |
-| `/ship` | Fan-out: review + failure-mode + readiness, GO/NO-GO with rollback | yes (`docs/features/<slug>/launches/<date>.md`) |
+### Recommended: `/build` orchestrates the whole pipeline
+
+```text
+/build payment-authorization Owner: Payments. Multi-tenant. PCI-adjacent.
+   1k authorizations/sec p99. Triggered by orders.placed.v1. Calls
+   payment provider; emits payments.authorized.v1 / payments.declined.v1.
+```
+
+`/build` runs the full per-feature lifecycle in sequence and **pauses for your approval between steps**. After each artifact is written you reply `continue` to proceed, `revise: <changes>` to update, `skip <step>` to bypass an optional step, or `stop` to exit. The flow:
+
+1. `/design` -> design doc -> approve
+2. `/contract` (per channel) -> schemas + AsyncAPI + contract docs -> approve
+3. `/architecture` -> feature-scoped ADRs (optional) -> approve
+4. `/implement` -> source code -> approve
+5. `/test` -> test files -> approve
+6. `/review` -> architectural findings -> address blockers
+7. `/runbook` -> per-incident-type runbooks (optional) -> approve
+8. `/failure-mode` -> blast-radius analysis -> approve
+9. `/readiness` -> tier assessment -> approve
+10. `/prelaunch` -> GO/NO-GO synthesis -> done
+
+If the design suggests the work is below threshold (no patterns named, all `<TBD>` system concerns), `/build` aborts after Step 1 and asks if you want to proceed anyway.
+
+### Granular: run individual commands
+
+Use these when you want to re-run a single step, fix one artifact, or do work outside `/build`'s linear flow.
+
+#### Per-feature lifecycle (sequential, run in order)
+
+For each new feature, run these in approximately this order. Skip steps that don't apply.
+
+| #     | Command         | Purpose                                                          | Writes?                                                               |
+| ----- | --------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1     | `/design`       | Pick patterns and boundaries; service-level design               | yes (`docs/features/<slug>/design.md`)                                |
+| 2     | `/contract`     | Define wire contract per channel (schemas, AsyncAPI, owner)      | yes (3 files per channel)                                             |
+| 3     | `/implement`    | Generate source code from the existing docs                      | yes (source files at paths named in design's File and component plan) |
+| 4     | `/test`         | Generate tests grounded in contracts + design                    | yes (test files alongside source)                                     |
+| 5     | `/review`       | Architectural review of the diff                                 | no (chat)                                                             |
+| 6     | `/failure-mode` | Walk failure catalog against the design                          | no (chat)                                                             |
+| 7     | `/readiness`    | Tier assessment (Prototype / Service-ready / Production-ready /Enterprise-critical) | no (chat)                                              |
+| 8     | `/prelaunch`         | Synthesize go/no-go from #5/#6/#7 + rollback plan. **Gate, not builder.** | yes (`docs/features/<slug>/launches/<date>.md`)               |
+| any   | `/runbook`      | Operational runbook for an incident type (DLQ, replay, failover) — run as many as the feature needs | yes (`docs/features/<slug>/runbooks/`)        |
+| any   | `/architecture` | ADR or RFC for a feature-specific decision (e.g. "saga orchestrator for THIS service") | yes (`docs/features/<slug>/adrs/`)                       |
+
+The order matters for some pairs:
+- `/contract` must run before `/implement` (the schemas determine struct shapes).
+- `/implement` must run before `/test` (tests need code to test against).
+- `/review`, `/failure-mode`, `/readiness` run before `/prelaunch` (`/prelaunch` synthesizes their reports).
+
+The rest is flexible.
+
+### Platform-wide (occasional, not per-feature)
+
+These commands write to `docs/system/` and run when cross-feature decisions, conventions, or incidents need to be captured.
+
+| Command                       | When to use                                                                                                   | Writes?                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `/architecture` (platform)    | Cross-feature decisions: broker choice, mesh policy, schema-registry vendor, multi-region strategy            | yes (`docs/system/adrs/`)                |
+| `/standard`                   | Once a rule appears in 3+ feature designs (e.g. "all services emit OpenTelemetry traces"), promote it         | yes (`docs/system/standards/<topic>.md`) |
+| `/runbook` `--scope=platform` | Cross-feature incidents: broker outage, schema-registry rollback, region-wide failover                        | yes (`docs/system/runbooks/`)            |
+
+### Typical run for one feature
+
+```text
+1. /design payment-authorization      <- patterns, boundaries, system concerns
+2. /contract payments.authorized.v1   <- wire contract (one per channel)
+3. /implement payment-authorization   <- code from the docs
+4. /test payment-authorization        <- tests from the contracts
+5. /runbook for payments.authorized.v1.dlq    <- run for each incident type
+6. /review the staged diff            <- architectural review
+7. /failure-mode for payment-authorization
+8. /readiness for payment-authorization
+9. /prelaunch payment-authorization        <- gate; reads the prior reports
+```
+
+For the full walkthrough, see [`docs/getting-started.md`](docs/getting-started.md).
 
 When loaded via the plugin marketplace, commands are namespaced as `/distributed-systems-patterns:<name>`.
 
@@ -139,7 +202,7 @@ flowchart LR
     E --> F[/review: architectural<br/>diff review/]
     F --> G[/failure-mode: blast radius,<br/>tenant impact/]
     G --> H[/readiness: tier and<br/>system-concerns evidence/]
-    H --> I[/ship: GO/NO-GO<br/>with rollback/]
+    H --> I[/prelaunch: GO/NO-GO<br/>with rollback/]
     I --> J[Operate: /runbook<br/>for each incident type]
     J --> K[Migrate / deprecate /<br/>retire]
     K --> A
@@ -165,17 +228,17 @@ Unknown fields stay as `<TBD>` rather than being omitted - the placeholder force
 
 Some knowledge applies to every feature: the broker the platform uses, the channel-naming convention, the observability standard, the on-call topology, the compliance baseline. Restating it in every feature design is duplication waiting to drift. The skill keeps it in one place under `docs/system/`:
 
-| Layer | Location | Examples |
-| --- | --- | --- |
-| Service registry | `docs/system/catalog.md` | One row per feature |
-| Platform-wide ADRs | `docs/system/adrs/` | Broker choice, mesh policy, schema-registry vendor |
-| Platform-wide runbooks | `docs/system/runbooks/` | Broker outage, schema-registry rollback, region-wide failover |
-| Standards / conventions | `docs/system/standards/` | Channel-naming, observability, security baseline, deployment |
-| Glossary | `docs/system/glossary.md` | Shared domain terms |
-| Topology | `docs/system/topology.md` | Team ownership map and Conway boundaries |
-| Capacity | `docs/system/capacity.md` | Platform capacity envelope |
-| Compliance | `docs/system/compliance.md` | PII / GDPR / SOC2 baseline |
-| DR | `docs/system/dr.md` | Region failover plan |
+| Layer                   | Location                    | Examples                                                      |
+| ----------------------- | --------------------------- | ------------------------------------------------------------- |
+| Service registry        | `docs/system/catalog.md`    | One row per feature                                           |
+| Platform-wide ADRs      | `docs/system/adrs/`         | Broker choice, mesh policy, schema-registry vendor            |
+| Platform-wide runbooks  | `docs/system/runbooks/`     | Broker outage, schema-registry rollback, region-wide failover |
+| Standards / conventions | `docs/system/standards/`    | Channel-naming, observability, security baseline, deployment  |
+| Glossary                | `docs/system/glossary.md`   | Shared domain terms                                           |
+| Topology                | `docs/system/topology.md`   | Team ownership map and Conway boundaries                      |
+| Capacity                | `docs/system/capacity.md`   | Platform capacity envelope                                    |
+| Compliance              | `docs/system/compliance.md` | PII / GDPR / SOC2 baseline                                    |
+| DR                      | `docs/system/dr.md`         | Region failover plan                                          |
 
 **The rule: reference, don't restate.** When a feature design touches a shared concern, link to the shared doc rather than copy-pasting the rule. If the same fact appears in three feature docs, it belongs in `docs/system/standards/` instead.
 

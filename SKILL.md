@@ -57,7 +57,7 @@ This skill is an operating procedure. Load only the reference file needed:
 - `docs/system/standards/*.md` - platform conventions (when a feature artifact would touch a convention)
 - `docs/system/adrs/*.md` - platform-wide decisions (when a feature artifact must comply)
 - `docs/system/glossary.md` - shared vocabulary (when domain terms might be ambiguous)
-- `docs/system/topology.md` - team ownership map (when ownership decisions matter)
+- `docs/system/topology.md` - team ownership map (when ownerlaunch decisions matter)
 
 **Architectural and decision references** (load when designing, reviewing, or documenting):
 - `reference/catalog.md` - systems, messaging, workflow, and resilience patterns with modern realizations.
@@ -204,7 +204,7 @@ When this skill activates, every answer must include or perform these steps:
     - `/architecture` for a feature-scoped ADR appends `adrs/NNNN-<title>.md` to `## Artifacts.ADRs`.
     - `/contract` appends `contracts/<channel>.md` to `## Artifacts.Contracts` and adds an entry to `## Channels owned` linking to `contracts/<channel>.md`.
     - `/runbook` appends `runbooks/<incident>.md` to `## Artifacts.Runbooks`.
-    - `/ship` appends `launches/<date>.md` to `## Artifacts.Launch decisions`, and updates `## Service info.Tier` and `## Service info.Last reviewed`.
+    - `/prelaunch` appends `launches/<date>.md` to `## Artifacts.Launch decisions`, and updates `## Service info.Tier` and `## Service info.Last reviewed`.
 
     If the file does not exist, create it with placeholders.
 

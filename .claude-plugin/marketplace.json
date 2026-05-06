@@ -10,12 +10,12 @@
   "plugins": [
     {
       "name": "distributed-systems-patterns",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "source": {
         "source": "github",
         "repo": "adibhanna/distributed-systems-patterns"
       },
-      "description": "Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, and operational artifacts for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Default outputs are decisions and contracts, not implementation code; specific libraries are user choices. Includes 8 slash commands (/design, /review, /architecture, /contract, /runbook, /failure-mode, /readiness, /ship) and 27 reference files."
+      "description": "Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, and operational artifacts for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Default outputs are decisions and contracts, not implementation code; specific libraries are user choices. Includes 12 slash commands: /build orchestrates the per-feature pipeline end-to-end with approval gates; granular commands /design, /contract, /implement, /test, /architecture, /standard, /runbook, /review, /failure-mode, /readiness, /prelaunch run individually. Plus 27 reference files."
     }
   ]
 }
