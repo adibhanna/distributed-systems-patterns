@@ -6,20 +6,47 @@
 
 A connected system for designing distributed systems **at scale**. Produces design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions that link into a per-feature index and a system-level catalog. Covers integration patterns plus the layer beyond code: team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, disaster recovery, and lifecycle. Default outputs are architectural artifacts; specific library choices stay with the team.
 
+> Heads up: this is a heavy-duty toolkit for production systems with real cross-team coordination problems. If you're working alone, on a prototype, or on a single-process app, [skip ahead](#who-this-is-for) — you'll likely overengineer.
+
 ## Who this is for
 
-Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. The artifacts the skill produces (design docs, ADRs, contracts, runbooks, launch decisions) are valuable when multiple teams or services must coordinate.
+Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. The artifacts the skill produces (design docs, ADRs, contracts, runbooks, launch decisions) are durable, multi-team coordination tools. They earn their keep when:
 
-**Not for**:
+- Multiple services or teams must agree on contracts and ownership.
+- A change introduces durable infrastructure (a broker, workflow engine, schema registry, mesh, cache fleet, shard, or new consistency model).
+- The work needs decision artifacts that outlast the code (ADRs that future hires can read; runbooks that on-call engineers reach for at 2 a.m.).
 
-- Single-process applications or single-function utilities
-- Frontend-only work
-- Quick local refactors or single-function code
-- ETL jobs or scripts without service coordination
-- Beginner-level pattern questions ("what is a queue?")
-- Pre-MVP prototypes that don't yet have users or operational costs
+> **Warning: do NOT use this skill for small projects.** Running the full 11-command pipeline on a side project, hackathon, class assignment, or scrappy MVP is overengineering theater. You will produce ten markdown files for code that doesn't exist yet. The skill assumes ≥2 services, real users, real operational cost, and real failure modes worth planning around. If those don't apply yet, a regular prompt without slash commands is faster, clearer, and produces less ceremony.
 
-**Threshold for invoking the full pipeline**: at least two services or two teams must coordinate; or the work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model; or the request explicitly asks for an ADR / RFC / runbook / launch decision. If none of these apply, this skill is overkill — a regular prompt without the slash commands is faster and clearer.
+### Concrete don't-use cases
+
+The skill is wrong for:
+
+- **Side projects and hobby code.** Nobody but you will read the ADR.
+- **Hackathons and prototypes.** Decisions you'll abandon in a week don't need durable artifacts.
+- **Single-process apps.** A Flask/Express/FastAPI service with one Postgres database doesn't have the cross-team coordination problem the skill solves.
+- **Frontend-only work.** UI components, React/Vue/Svelte apps, design-system code.
+- **CRUD apps without async work.** REST endpoints over a single database, no queues, no background jobs.
+- **Single-team startups under ~10 engineers.** Conway's Law says the architecture mirrors team structure; with one team there's no boundary to negotiate.
+- **Single-function utilities.** A script, a lambda that does one thing, a CLI tool.
+- **Beginner pattern questions.** "What is a queue?" "When do I use Redis vs Memcached?" — the skill assumes you already know.
+- **ETL and batch pipelines that don't coordinate services.** Airflow DAGs that move data between two databases without crossing team boundaries.
+- **Internal tools with single-digit users.** Admin dashboards, ops scripts, debug consoles.
+
+### When the skill earns its weight
+
+- A platform team and a product team need to agree on event contracts.
+- You're introducing Kafka/SQS/RabbitMQ/Pub/Sub/Temporal where there wasn't async messaging before.
+- Multiple services consume the same events and need a shared schema-evolution policy.
+- You're going multi-region or multi-tenant.
+- Compliance (PCI, SOC2, GDPR, HIPAA) requires audited decision trails.
+- You're carrying production-grade SLOs and on-call rotations.
+
+If your project doesn't fit any of these, the skill is overhead, not help.
+
+### What the skill does when invoked below the threshold
+
+When activated on a request that doesn't meet the threshold, the skill is configured to **decline the full pipeline** and respond with a simpler answer instead. If you see a normal conversational answer for what felt like a distributed-systems question, that's the skill correctly recognizing the work is below its bar.
 
 ## Install
 
@@ -30,7 +57,7 @@ Distributed-systems engineers, tech leads, staff/principal engineers, platform t
 /plugin install distributed-systems-patterns@adibhanna-distributed-systems-patterns
 ```
 
-Claude Code discovers the skill and all 9 slash commands automatically.
+Claude Code discovers the skill and all 11 slash commands automatically.
 
 ### Option B — One-command symlink install (Claude Code, Codex, OpenCode)
 
@@ -57,6 +84,8 @@ Once installed, these commands invoke the skill in opinionated ways:
 | --- | --- | --- |
 | `/design` | Pick patterns and boundaries; service-level design with system concerns | yes (`docs/features/<slug>/design.md`) |
 | `/contract` | Define wire contract: schemas, AsyncAPI, owner | yes (3 files under `docs/features/<slug>/`) |
+| `/implement` | Generate code from existing design + contracts + standards | yes (source files at paths named in design's File and component plan) |
+| `/test` | Generate tests grounded in contracts + design (idempotency, retry, DLQ, replay, contract compatibility) | yes (test files alongside source) |
 | `/architecture` | ADR / RFC / Implementation Plan, feature-scoped or platform-wide | yes (feature or `docs/system/`) |
 | `/standard` | Platform convention every feature follows | yes (`docs/system/standards/<topic>.md`) |
 | `/runbook` | Operational runbook, feature-scoped or platform-wide | yes (feature or `docs/system/runbooks/`) |

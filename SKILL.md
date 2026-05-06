@@ -21,7 +21,17 @@ Distributed-systems engineers, tech leads, staff/principal engineers, platform t
 
 **Not for**: single-process apps, single-function utilities, frontend-only work, quick local refactors, ETL jobs without service coordination, beginner pattern questions ("what is a queue?"), or pre-MVP prototypes that don't yet have users or operational costs.
 
-**Threshold for invoking the full skill**: at least two services or two teams must coordinate; or the work introduces a broker, workflow engine, schema, mesh, cache, shard, or new consistency model; or the request explicitly asks for an ADR/RFC/runbook/launch decision. If none of these apply, decline the full pipeline and respond directly with a simpler answer; tell the user the skill would be overkill for their case.
+**Threshold for invoking the full skill**: at least two services or two teams must coordinate; or the work introduces durable infrastructure (broker, workflow engine, schema registry, mesh, cache fleet, shard, new consistency model); or the request explicitly asks for an ADR / RFC / runbook / launch decision.
+
+**Decline behavior when below the threshold**: if the user invokes the skill (via vocabulary trigger or slash command) on a problem that does not meet the threshold, the skill must explicitly decline the full pipeline. Tell the user one sentence about why ("This is a single-process refactor; a regular prompt is faster") and answer the question simply, without producing design docs / ADRs / contracts. Examples that should trigger decline:
+
+- A single-team prototype, hackathon, or side project.
+- A single-process app with one database and no async work.
+- A frontend-only change.
+- A "what is X?" beginner pattern question (answer the question; don't run the pipeline).
+- An ETL job that doesn't cross service or team boundaries.
+
+When in doubt about whether the threshold is met, ask the user one question: "How many services/teams will this touch, and is this for production with real users?" before deciding whether to run the pipeline.
 
 ## Shared knowledge across features
 
