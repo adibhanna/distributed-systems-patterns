@@ -9,9 +9,11 @@ tags: [distributed-systems, messaging, event-driven, integration, architecture, 
 
 ## Purpose
 
-Use this skill for code, architecture, and decision documents that cross service boundaries. It covers distributed systems, integration, event-driven architecture, workflows, resilience, scaling, cloud/platform design, operations, security, and enterprise governance. The scope is any boundary crossing a process, machine, region, team, data owner, or reliability domain.
+This skill is a **connected system for designing distributed systems at scale**. It produces decisions, contracts, runbooks, and operational artifacts that link together into a per-service index and a system-level catalog, so a reader can navigate from "the system" down to a specific channel's runbook in two clicks.
 
-The patterns are technology-neutral; Kafka topics, SQS queues, Temporal workflows, EventBridge rules, Kubernetes autoscalers, Envoy circuit breakers, Debezium outbox SMTs, CloudEvents envelopes, and AsyncAPI contracts are modern implementations of the same pattern-and-forces mindset.
+Scope covers integration, messaging, event-driven architecture, workflows, resilience, scaling, and cloud/platform design **plus the layer beyond code**: team ownership and Conway's Law boundaries, multi-tenancy, cost ownership, compliance (PII, GDPR, SOC2, data residency), capacity planning, disaster recovery, lifecycle (deprecation, migration, retirement), and governance. Default outputs are architectural and operational artifacts, not implementation code.
+
+The skill is technology-neutral. Kafka topics, SQS queues, Temporal workflows, EventBridge rules, Kubernetes autoscalers, Envoy circuit breakers, Debezium outbox SMTs, CloudEvents envelopes, and AsyncAPI contracts are modern implementations of the same pattern-and-forces mindset. Specific package picks (which Kafka client, which ORM) are team decisions; the skill recommends categories and lists options with trade-offs.
 
 This skill is an operating procedure. Load only the reference file needed:
 
@@ -66,7 +68,88 @@ When this skill activates, every answer must include or perform these steps:
 12. For production-readiness, launch, incident, security, or testing requests, load the specific guide: `security-compliance.md`, `testing-strategy.md`, `operational-runbooks.md`, `failure-modes.md`, or `maturity-model.md`.
 13. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using a stable path: `docs/designs/<slug>-design.md`, `docs/adr/NNNN-<slug>.md`, `docs/architecture/<slug>-<doctype>.md`, `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`, `docs/runbooks/<slug>.md`, or `docs/launches/<slug>-<YYYY-MM-DD>.md`. After writing, emit a one-line confirmation naming the path - do not paste the full document back into chat. Skip the file write only on an explicit opt-out signal: `show in chat only`, `don't write a file`, `chat only`, or `no file`. The bare verb "show" or phrases like "show me X before Y" are about response *ordering*, not output medium, and must not trigger the escape hatch. Conversational analyses (review findings, readiness assessment, failure-mode discussion) stay in chat by default.
 
+    Every deliverable artifact must include a **`## System concerns`** section near the top (after Summary, before the topic-specific structure) covering the layer beyond code: ownership/Conway boundary, tenancy, cost owner, compliance class, capacity expectation, DR posture, and lifecycle/retirement plan. Leave any field as `<TBD>` if unknown rather than omitting it - the placeholder forces the question to be asked.
+
 14. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `schemas/` and `asyncapi/` produced by `/contract`. Runbooks belong in `docs/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
+
+15. **Cross-link artifacts and include summary metadata.** Every file the skill writes (design, ADR, RFC, contract, runbook, launch decision) must include:
+
+    a. A `## Summary` block at the top with: `Status:` (Draft | Proposed | Accepted | Superseded | Retired), `Date:` (`<YYYY-MM-DD>`), and a 1-2 sentence TL;DR.
+
+    b. A `## Related artifacts` section at the bottom that lists peer docs for the same feature/slug. Before writing, glob the repo for these patterns and include the matches (use Glob tool):
+       - `docs/designs/<slug>*.md`
+       - `docs/architecture/<slug>*.md`
+       - `docs/adr/*<slug>*.md`
+       - `docs/contracts/<channel>*.md` (where `<channel>` is derived from the feature, e.g. `orders.placed.v1`)
+       - `schemas/<channel>*.{json,avsc,proto}`
+       - `asyncapi/<channel>*.yaml`
+       - `docs/runbooks/*<slug>*.md`
+       - `docs/launches/<slug>*.md`
+
+       If matches exist, link them by relative path. If none exist yet, list the conventional paths where they would land if/when produced (so the reader knows what to look for).
+
+    c. Slug consistency: derive a single feature slug from the user's prompt (e.g. `order-fulfillment`, `payment-authorization`, `webhook-ingestion`) and use it consistently across all files for that feature. Channel names (`orders.placed.v1`) are separate from feature slugs and may not match exactly; the contract uses the channel name in its filename.
+
+    d. Reading-before-writing: when writing an artifact for a feature where related docs already exist, the agent should read those docs (at least their Summary blocks) so the new artifact's decisions are consistent with prior ones - particularly patterns named, ordering keys, owner team, and channel names.
+
+16. **Maintain a per-service index doc.** Every artifact-writing command, after writing its main file, must also create or update `docs/services/<slug>/README.md` for the feature's service. This per-service README aggregates every artifact for that service into one entry point. Use this template, filling sections that apply and leaving placeholders where information is unknown:
+
+    ```markdown
+    # <Service Name>
+
+    ## Service info
+    - **Owner team**: <team / Slack / on-call>
+    - **SLO**: <user-journey or service-level SLO>
+    - **Tier**: Prototype | Service-ready | Production-ready | Enterprise-critical
+    - **Last reviewed**: <YYYY-MM-DD>
+
+    ## System concerns (the layer beyond code)
+    - **Tenancy**: <single-tenant | multi-tenant with what isolation>
+    - **Compliance**: <none | PII | GDPR | SOC2 | PCI | data residency>
+    - **Cost owner**: <team or cost center>
+    - **Capacity**: <expected volume p50/p99, growth assumption>
+    - **DR posture**: <RPO / RTO / region strategy>
+    - **Lifecycle**: <created date; deprecation trigger; replacement plan>
+
+    ## Artifacts
+    - **Design**: <docs/designs/<slug>-design.md or "(not yet written)">
+    - **ADRs**: <list of docs/adr/*<slug>*.md or "(none)">
+    - **Contracts**: <list of docs/contracts/*.md owned by this service>
+    - **Runbooks**: <list of docs/runbooks/*<slug>*.md>
+    - **Launch decisions**: <list of docs/launches/<slug>-*.md>
+
+    ## Dependencies
+    - **Upstream services**: <list>
+    - **Downstream services**: <list>
+    - **External services**: <list>
+    - **Shared infrastructure**: <list>
+
+    ## Channels owned
+    - <channel-name>: <produced | consumed | both>. See <link to contract>.
+    ```
+
+    On every artifact write, append or update the relevant section: `/design` populates Service info + Artifacts.Design + System concerns; `/contract` adds an entry to Channels owned and links the contract; `/runbook` adds to Artifacts.Runbooks; `/architecture` adds to Artifacts.ADRs; `/ship` adds to Artifacts.Launch decisions and updates Tier + Last reviewed. If the file does not exist, create it with placeholders.
+
+17. **Maintain a system-level catalog.** Whenever a per-service README is created or updated, the command must also create or update `docs/system/catalog.md` with one row per service. Use this template:
+
+    ```markdown
+    # System Catalog
+
+    Last updated: <YYYY-MM-DD>
+
+    | Service | Owner | Tier | SLO | Compliance | Last reviewed | Index |
+    | --- | --- | --- | --- | --- | --- | --- |
+    | <slug> | <team> | <tier> | <SLO> | <PII/GDPR/none> | <YYYY-MM-DD> | [README](services/<slug>/README.md) |
+
+    ## Cross-cutting concerns
+
+    - **Org topology**: links to docs/system/org-topology.md if it exists.
+    - **Capacity envelope**: link to docs/system/capacity.md if it exists.
+    - **Compliance map**: link to docs/system/compliance.md if it exists.
+    - **DR posture**: link to docs/system/dr.md if it exists.
+    ```
+
+    Sort the table alphabetically by slug. Do not invent entries for services that have no per-service README. The catalog is a registry of what exists, not aspirational.
 
 Recommended response shape:
 

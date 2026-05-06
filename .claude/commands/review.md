@@ -15,11 +15,14 @@ Architectural review, not line-by-line code review. Findings are categorized by 
 5. Walk the distributed-systems checklist when the change touches scale, resilience, multi-region, or service boundaries: ownership, consistency, scaling axis, failure mode, backpressure, operations.
 6. Identify anti-patterns introduced or removed: dual-write, ack-before-commit, unbounded retry, retry storm, distributed monolith, shared OLTP, distributed 2PC, oversized broker payloads, missing trace context, autoscaling on the wrong signal, distributed locks without fencing.
 7. Compute the readiness-tier impact (Prototype / Service-ready / Production-ready / Enterprise-critical) — does the change move the service up, down, or sideways?
+8. Walk the **System concerns** angle alongside the technical review: who owns this change? Does it touch tenant boundaries, compliance class, cost ownership, capacity envelope, or DR posture? Findings that cross these boundaries are categorized as `System` severity (in addition to Critical/Important/Suggestion).
 
-Categorize findings: **Critical** (introduces a launch-blocking anti-pattern or breaks a contract), **Important** (regresses a reliability answer or weakens a contract), **Suggestion** (architecture tightening that is not strictly required). Cite file:line for each finding to ground it.
+Categorize findings: **Critical** (introduces a launch-blocking anti-pattern or breaks a contract), **Important** (regresses a reliability answer or weakens a contract), **Suggestion** (architecture tightening that is not strictly required), **System** (changes ownership, tenancy, compliance, cost, capacity, DR, or lifecycle posture). Cite file:line for each finding to ground it.
 
 End with the readiness-tier verdict and the gaps to the next tier (if any).
 
 ## Output
 
 This command produces conversational findings, not a file. Use `/architecture` if the user wants a permanent decision artifact, `/ship` for a launch-decision document.
+
+If review findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/services/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.

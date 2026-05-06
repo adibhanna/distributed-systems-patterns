@@ -64,11 +64,29 @@ If the agent goes straight to code without naming patterns or running the checkl
 Use the distributed-systems-patterns skill: design an order-placed event flow in Go.
 ```
 
-### Architectural-first by design
+### A connected system, not eight standalone commands
 
-This skill produces decisions and contracts; code lives in source files. `/design` writes a decision doc with no inline code — patterns, channel and ordering choices, owners, alternatives, file inventory, and readiness tier. `/contract` writes schema files and AsyncAPI under `schemas/` and `asyncapi/`. `/architecture` writes ADRs and RFCs with trade-offs and rollout. `/review` evaluates a change architecturally — which patterns are touched, which contracts are affected, which checklist items are open — rather than line-by-line. `/runbook`, `/failure-mode`, `/readiness`, and `/ship` produce operational artifacts and decisions, not handlers.
+Every artifact the skill writes lands in two places: the conventional path (`docs/designs/...`, `docs/contracts/...`, etc.) AND the per-service index at `docs/services/<slug>/README.md`. The per-service index aggregates every artifact for one service plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. The system catalog at `docs/system/catalog.md` indexes every service.
 
-If you want code, ask for it explicitly: "Show me a Go boundary snippet for the idempotent receiver." The skill will produce a minimal, library-agnostic sample at the pattern boundary — not a full production handler — and use the repo language when one is clear.
+Reader navigation:
+
+```text
+docs/system/catalog.md
+  -> docs/services/<slug>/README.md
+    -> docs/designs/<slug>-design.md
+       docs/contracts/<channel>.md
+       docs/runbooks/<incident>.md
+       docs/adr/NNNN-<slug>.md
+       docs/launches/<slug>-<date>.md
+```
+
+Two clicks from "the system" to "this channel's runbook".
+
+### Everything beyond code
+
+Each artifact carries a `## System concerns` block covering owner team, tenancy, cost owner, compliance, capacity, DR posture, and lifecycle. Unknown fields stay as `<TBD>` so the question is forced. The skill is for the layer beyond code: org topology, tenant isolation, compliance lineage, capacity, cost ownership, DR, deprecation - alongside the patterns and contracts.
+
+If you want code, ask for it explicitly: "Show me a Go boundary snippet for the idempotent receiver." The skill produces a minimal, library-agnostic sample at the pattern boundary, not a full production handler.
 
 ## 3. Walkthrough: shipping order fulfillment
 

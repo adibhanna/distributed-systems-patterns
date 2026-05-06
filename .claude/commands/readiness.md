@@ -13,4 +13,9 @@ Determine which readiness tier the change actually qualifies for and name the ga
 3. Name the current tier explicitly. Cite the specific evidence items that placed it there and the items that prevented a higher tier.
 4. List the remaining gaps to reach Production-ready (Level 3) or Enterprise-critical (Level 4) using the recommended-next-move list from `reference/maturity-model.md`.
 5. If the author or PR description claims a tier the evidence does not support, state the explicit downgrade and list the missing gates from `reference/checklist.md` and `reference/production-guide.md`.
-6. End with the recommended next move and the owner who must close each gap.
+6. Readiness is not just code-quality. Walk the **system concerns** evidence: ownership (who is paged?), tenancy (how does this isolate?), compliance (what classifications apply?), cost (who pays the bill?), capacity (will this scale?), DR (how does this survive region loss?), lifecycle (when does this retire?). Missing evidence in any concern downgrades the tier.
+7. End with the recommended next move and the owner who must close each gap.
+
+## Output
+
+This command produces conversational findings, not a file. If readiness findings reveal owner, tenancy, cost, compliance, capacity, DR, or lifecycle facts that should be persisted, suggest updating `docs/services/<slug>/README.md` accordingly. Do not auto-write; the user owns the persistence decision for analytical findings.

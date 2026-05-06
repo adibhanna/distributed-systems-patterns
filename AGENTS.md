@@ -4,7 +4,16 @@ This is the cross-tool entry point for Codex, Claude, OpenCode, Aider, Cursor, a
 
 ## Activation
 
-Apply this skill whenever the task involves integration, messaging, event-driven decisions and contracts, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture. Default outputs are architectural decisions, contracts, and operational artifacts; code is shown only when explicitly requested.
+Apply this skill whenever the task involves designing systems at scale: integration, messaging, event-driven decisions and contracts, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture - plus the layer beyond code (team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, DR, lifecycle, governance). Default outputs are architectural decisions, contracts, and operational artifacts; code is shown only when explicitly requested.
+
+## Connected system
+
+This skill is not 8 isolated commands; it is a connected system. Every artifact write also updates two index docs so the design stays navigable:
+
+- `docs/services/<slug>/README.md` aggregates a service's info, system concerns, artifacts, dependencies, and owned channels.
+- `docs/system/catalog.md` lists every service with one row each, linking to the per-service README.
+
+Reader path: catalog -> service README -> artifact (design, ADR, contract, runbook, launch). See SKILL.md items 16-17 for templates.
 
 Trigger signals:
 
@@ -27,6 +36,7 @@ Do not apply for pure local request-response, pure frontend work, single-process
 8. **For distributed-system risks, name those patterns too.** Load [`reference/distributed-systems-guide.md`](./reference/distributed-systems-guide.md) for boundaries, consistency, scaling, resilience, caching, sharding, multi-region, service mesh, SLOs, and governance.
 9. **For architecture documents, produce decision-ready artifacts.** Load [`reference/architecture-documentation.md`](./reference/architecture-documentation.md) for design docs, RFCs, ADRs, implementation plans, migration plans, diagrams, trade-offs, rollout, and verification.
 10. **For production usage, use practical guides.** Load scenario playbooks, failure modes, security/compliance, testing strategy, operational runbooks, maturity model, or platform mappings when they match the request.
+11. **Keep the system navigable.** After writing any artifact, update `docs/services/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
 
 ## Pattern Selection Excerpt
 

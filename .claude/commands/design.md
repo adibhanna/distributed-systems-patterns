@@ -18,12 +18,33 @@ The user has a new integration or event-flow problem. Produce a written design d
 
 ## Output
 
+8. Before writing, run a Glob for `docs/**/*.md`, `schemas/**`, `asyncapi/**` matching this feature's slug and channel names. Populate the **Related artifacts** section with concrete paths to existing peers; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
+
+9. **Update the per-service index and system catalog.** After writing the main artifact, also create or update:
+   - `docs/services/<slug>/README.md` - the per-service entry point. Append/update the relevant Artifacts subsection (Design / ADRs / Contracts / Runbooks / Launches) with a link to the new artifact. If the file does not exist, create it from the template in SKILL.md item 16.
+   - `docs/system/catalog.md` - the system-level service registry. Append/update the row for `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
+   These updates are part of the same command turn; do not leave them for a follow-up.
+
 **Write the design to `docs/designs/<feature-slug>-design.md`** in the current repo. Pick a slug from the user's prompt (e.g. `order-fulfillment`, `webhook-ingestion`). If `docs/` does not exist, create it. If a file with the same name exists, ask before overwriting.
 
 Use this structure:
 
 ```markdown
 # <Feature> Design
+
+## Summary
+- **Status**: Draft | Proposed | Accepted
+- **Date**: <YYYY-MM-DD>
+- **TL;DR**: 1-2 sentence statement of what this design proposes and why.
+
+## System concerns
+- **Owner team**: <team / Slack / on-call escalation>
+- **Tenancy**: <single-tenant | multi-tenant w/ specified isolation>
+- **Compliance**: <none | PII | GDPR | SOC2 | PCI | data residency>
+- **Cost owner**: <team / cost center / per-event budget>
+- **Capacity**: <expected p50/p99 volume; growth assumption>
+- **DR posture**: <RPO | RTO | region strategy>
+- **Lifecycle**: <creation date; deprecation trigger; replacement plan>
 
 ## Integration style
 ## Patterns
@@ -35,6 +56,12 @@ Use this structure:
 ## File and component plan
 ## Open questions
 ## Readiness tier and gaps
+
+## Related artifacts
+- Architecture decisions: `docs/adr/` (ADRs that record specific choices made here)
+- Contracts: `docs/contracts/<channel>.md`, `schemas/<channel>.<ext>`, `asyncapi/<channel>.yaml`
+- Runbooks: `docs/runbooks/` (DLQ triage, replay, failover for the channels listed above)
+- Launch decisions: `docs/launches/<slug>-<YYYY-MM-DD>.md`
 ```
 
 **Strict rule: a design doc is a decision artifact, not a code artifact.** Do NOT include Go, SQL, JSON, YAML, or any implementation code blocks in this file. Specifically:

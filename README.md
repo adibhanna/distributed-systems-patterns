@@ -4,7 +4,7 @@
   <img src="./logo.jpg" alt="Distributed Systems Patterns logo" width="600">
 </p>
 
-An AI-agent skill for making distributed-systems decisions: design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions for event-driven, microservice, integration, scaling, resilience, and multi-region work. Default outputs are architectural artifacts, not implementation code; specific library choices stay with the team.
+A connected system for designing distributed systems **at scale**. Produces design docs, ADRs, RFCs, message contracts, runbooks, readiness assessments, and launch decisions that link into a per-service index and a system-level catalog. Covers integration patterns plus the layer beyond code: team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, disaster recovery, and lifecycle. Default outputs are architectural artifacts; specific library choices stay with the team.
 
 ## Install
 
@@ -38,20 +38,64 @@ bash ~/.agents/skills/distributed-systems-patterns/scripts/validate_skill.sh
 
 Once installed, these commands invoke the skill in opinionated ways:
 
-| Command | What it does |
+| Command | Role in the system |
 | --- | --- |
-| `/design` | Pick patterns, name modern tools, run reliability checklist before coding |
-| `/review` | Production-readiness review on the current diff — anti-patterns, reliability gaps |
-| `/architecture` | Generate a decision-ready architecture doc, RFC, ADR, or implementation plan |
-| `/contract` | Design or review a message contract — CloudEvents, AsyncAPI 3.1, schema versioning |
-| `/runbook` | Generate an operational runbook — DLQ, lag, replay, schema rollback, failover |
-| `/failure-mode` | Failure-mode analysis — first failure, worst duplicate, blocked partition, retry storm |
-| `/readiness` | Map the change to a readiness tier — Prototype, Service-ready, Production-ready, Enterprise-critical |
-| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback plan |
+| `/design` | Pick patterns and boundaries; write a service design with system concerns. |
+| `/contract` | Define the wire contract: schemas, AsyncAPI, owner, compatibility, retention. |
+| `/architecture` | Record decisions: ADR for one decision, RFC for an option set, Implementation Plan for execution. |
+| `/runbook` | Operational artifact for an incident type tied to a service or channel. |
+| `/review` | Architectural review of a diff: patterns, contracts, anti-patterns, system-level blast radius. |
+| `/failure-mode` | "What's the worst that can happen?" Per-failure blast radius across tenants, compliance, cost, DR. |
+| `/readiness` | Map a service or change to a readiness tier. Walks both technical and system-concerns evidence. |
+| `/ship` | Fan-out: parallel review + failure-mode + readiness, synthesize go/no-go with rollback. |
 
 When loaded via the plugin marketplace, commands are namespaced as `/distributed-systems-patterns:<name>`.
 
 For a full walkthrough — install verification, a cold-start prompt, and the order-fulfillment scenario chained through every command — see [`docs/getting-started.md`](docs/getting-started.md).
+
+## How it connects
+
+The skill produces three layers of artifacts that link together:
+
+1. **Per-artifact files** at conventional paths (`docs/designs/`, `docs/adr/`, `docs/contracts/`, `docs/runbooks/`, `docs/launches/`, `schemas/`, `asyncapi/`).
+2. **Per-service indexes** at `docs/services/<slug>/README.md`. Aggregates every artifact for one service plus its ownership, tenancy, cost owner, compliance class, capacity, DR posture, and lifecycle. Auto-updated by every command.
+3. **A system catalog** at `docs/system/catalog.md`. One row per service: owner, tier, SLO, compliance, last reviewed. Auto-updated whenever a per-service README changes.
+
+Reader navigation: `docs/system/catalog.md` -> `docs/services/<slug>/README.md` -> a specific artifact. Two clicks from "the system" to "this consumer's DLQ runbook".
+
+### Lifecycle
+
+```mermaid
+flowchart LR
+    A[Strategy / problem framing] --> B[/design: pick patterns,<br/>boundaries, contracts/]
+    B --> C[/contract: schemas,<br/>AsyncAPI, ownership/]
+    B --> D[/architecture: ADRs,<br/>RFCs, plans/]
+    C --> E[Implementation]
+    D --> E
+    E --> F[/review: architectural<br/>diff review/]
+    F --> G[/failure-mode: blast radius,<br/>tenant impact/]
+    G --> H[/readiness: tier and<br/>system-concerns evidence/]
+    H --> I[/ship: GO/NO-GO<br/>with rollback/]
+    I --> J[Operate: /runbook<br/>for each incident type]
+    J --> K[Migrate / deprecate /<br/>retire]
+    K --> A
+```
+
+Every command updates the per-service README and the system catalog. The lifecycle is a loop, not a line.
+
+### "Everything beyond code"
+
+Each artifact carries a `## System concerns` block covering:
+
+- **Owner team and Conway boundary**
+- **Tenancy** (single-tenant or multi-tenant with specified isolation)
+- **Compliance** (PII, GDPR, SOC2, PCI, data residency)
+- **Cost owner** (team / cost center / per-event budget)
+- **Capacity** (expected volume; growth assumption)
+- **DR posture** (RPO, RTO, region strategy)
+- **Lifecycle** (creation, deprecation trigger, replacement plan)
+
+Unknown fields stay as `<TBD>` rather than being omitted - the placeholder forces the question.
 
 ## Manual install (per-tool detail)
 
@@ -74,6 +118,7 @@ When activated, the agent must:
 6. Default to architectural artifacts (decisions, contracts, runbooks); show code only when explicitly asked, in the repo's language, library-agnostic where possible.
 7. Add pattern comments in integration code, for example `// Pattern: Transactional Outbox - avoids dual-write`.
 8. Use the review checklist before calling a change production-ready.
+9. Maintain a per-service index at `docs/services/<slug>/README.md` and a system catalog at `docs/system/catalog.md`. Every artifact updates both, so the system stays navigable.
 
 ## Layout
 
@@ -121,10 +166,22 @@ skill/
 ├── scripts/
 │   └── validate_skill.sh            # local package validation
 └── docs/
+    ├── system/
+    │   └── catalog.md                 # system-level service registry
+    ├── services/
+    │   └── <slug>/
+    │       └── README.md              # per-service index (auto-updated)
+    ├── designs/<slug>-design.md
+    ├── architecture/<slug>-<doctype>.md
+    ├── adr/NNNN-<slug>.md
+    ├── contracts/<channel>.md
+    ├── runbooks/<incident>.md
+    ├── launches/<slug>-<date>.md
     ├── any-agent-setup.md
     ├── claude-code-setup.md
     ├── codex-setup.md
-    └── cursor-setup.md
+    ├── cursor-setup.md
+    └── getting-started.md
 ```
 
 `SKILL.md` is the canonical skill. `AGENTS.md` mirrors the activation policy and hard rules for tools that load `AGENTS.md`. The `reference/` directory is progressive disclosure: agents load only the file needed for the current task.
