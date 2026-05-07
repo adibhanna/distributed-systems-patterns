@@ -71,4 +71,13 @@ Use this structure for `docs/features/<slug>/contracts/<channel>.md`:
 
 Create parent directories as needed. If a file with the same name exists, ask before overwriting.
 
+**Before returning, run the auto self-check** (SKILL.md item 18). Critical traps for contracts:
+- `additionalProperties: false` + BACKWARD compatibility — closed schemas break additive evolution. Either drop `additionalProperties: false` or document strict consumer-first rollout.
+- Closed enums + BACKWARD — same trap for enum values. Open the enum or commit to v2 every time the catalog grows.
+- Cross-channel consistency when multiple contracts are written in one turn: check `expirytime`, retention, and ordering policies are consistent or that variations are justified.
+- Channel name in `schemas/`, `asyncapi/`, and `contracts/<channel>.md` all match.
+- Ordering key matches the design's declared partition key for this channel.
+
+Critical findings are fixed inline. Important findings are reported in chat as a follow-up note ("Self-check flagged: <issue>. Contract written; recommend `revise: <change>`.").
+
 Emit a one-line confirmation in chat: `Contract <channel> written: docs/features/<slug>/schemas/..., docs/features/<slug>/asyncapi/..., docs/features/<slug>/contracts/...`. Do not paste the schemas back into chat. If the user explicitly says "show in chat" or "don't write files", respond conversationally instead.

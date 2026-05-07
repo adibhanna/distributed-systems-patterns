@@ -72,6 +72,8 @@ Use this structure:
 
 If the user wants implementation guidance, route to `/architecture` for an Implementation Plan doc. If they want the actual schema and AsyncAPI files, route to `/contract`. If they want a runbook, route to `/runbook`.
 
+**Before returning, run the auto self-check** (SKILL.md item 18): scan for anti-patterns in the design, refuse all-`<TBD>` system concerns, verify cross-link integrity in `## Related artifacts`. Critical findings are fixed inline; Important findings are reported in chat as a follow-up note ("Self-check flagged: <issue>. The design is written; recommend revising via `revise: <change>`.").
+
 Then emit a one-line confirmation in chat: `Design written to docs/features/<slug>/design.md`. Do not paste the full design back into chat unless the user asks.
 
 If the user explicitly says "show in chat only" or "don't write a file", skip the file write and respond conversationally.

@@ -77,4 +77,6 @@ Platform-scoped:
 - Other platform runbooks: `./` (siblings)
 ```
 
+**Before returning, run the auto self-check** (SKILL.md item 18): verify all stop/rollback criteria are concrete (no `<TBD>` triggers), verify owner + escalation + dashboards are named (not placeholder), verify cross-link integrity. Critical findings are fixed inline; Important findings are reported in chat.
+
 Emit a one-line confirmation in chat: `Runbook written to docs/features/<slug>/runbooks/<incident-slug>.md` (feature-scoped) or `Runbook written to docs/system/runbooks/<incident-slug>.md` (platform-scoped). Do not paste the full runbook back into chat. If the user explicitly says "show in chat", respond conversationally instead.

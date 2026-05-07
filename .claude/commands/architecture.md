@@ -49,4 +49,6 @@ Use these relative paths in the doc's `## Related artifacts` section:
   - Catalog: `../catalog.md`
   - Feature READMEs that this ADR affects: `../../features/<slug>/README.md`
 
+**Before returning, run the auto self-check** (SKILL.md item 18): scan for anti-patterns named in Decision/Consequences, verify Status field is filled, refuse all-`<TBD>` system concerns, verify alternatives reference real options and superseded ADRs link back. Critical findings are fixed inline; Important findings are reported in chat.
+
 Emit a one-line confirmation in chat: `<DocType> written to <path>`. Do not paste the full document back into chat. If the user explicitly says "show in chat" or "don't write a file", respond conversationally instead.

@@ -55,4 +55,6 @@ After writing the launch decision, **update the per-feature index and system cat
 - `docs/features/<slug>/README.md` — append `launches/<YYYY-MM-DD>.md` to `## Artifacts.Launch decisions`. Update `## Service info`: bump `Tier` to the achieved tier (or downgrade if NO-GO) and `Last reviewed` to the launch date. If absent, create from SKILL.md item 16.
 - `docs/system/catalog.md` — append/update the row for `<slug>` with new tier and last-reviewed date. If absent, create from SKILL.md item 17.
 
+**Before returning, run the auto self-check** (SKILL.md item 18) on the launch decision file: verify the rollback plan is concrete (no `<TBD>` triggers/procedures), the tier verdict matches the evidence, and Critical findings from `/review` are listed as Blockers. The decision file is a launch-blocking artifact — fix Critical findings inline; do not return a known-broken decision.
+
 Emit a one-line confirmation: `Ship decision: <GO|NO-GO>. Written to docs/features/<slug>/launches/<date>.md.` plus blocker count if NO-GO.

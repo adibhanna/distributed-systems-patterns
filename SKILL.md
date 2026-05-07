@@ -238,6 +238,21 @@ When this skill activates, every answer must include or perform these steps:
 
     Platform standards live as plain markdown under `docs/system/standards/<topic>.md`; users author them directly or use `/architecture` at platform scope. If a shared doc does not yet exist for a recurring concern (the same convention restated in 3+ features), surface that in chat as a recommendation: "Consider promoting <concept> to docs/system/standards/<topic>.md so all features can reference it." Do not auto-create platform docs without explicit user direction.
 
+18. **Auto self-check before declaring artifact-writing work complete.** After every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/prelaunch`), run a quick self-check pass before returning. The self-check is a subset of `/review` focused on inconsistencies and traps the agent should catch in its own work:
+
+    - **Anti-pattern scan** against the just-produced artifact (dual-write, ack-before-commit, unbounded retry, missing DLQ owner, distributed monolith, shared OLTP, distributed 2PC).
+    - **Cross-file consistency**: contract ordering keys match the design's declared keys; channel names in contracts match channel names in the design's Boundary contracts section; system concerns in the contract match the design's System concerns.
+    - **Schema evolution traps**: if the schema has `additionalProperties: false` or closed enums AND the contract declares BACKWARD compatibility, flag the inconsistency. BACKWARD requires additive changes to be safe; closed schemas break that. Either drop `additionalProperties: false` / open the enum or document the strict consumer-first rollout.
+    - **Cross-channel consistency**: when multiple contracts are written in one turn, check that `expirytime`, retention, and ordering policies are consistent across channels (or that variations are justified).
+    - **System concerns completeness**: refuse to return an artifact where every system-concerns line is `<TBD>`. Force at least owner, tenancy, and compliance to be specified or explicitly flagged as needing user input.
+    - **Cross-link integrity**: verify every relative path in the artifact's `## Related artifacts` section points to a real or conventional path.
+
+    **Critical findings**: fix inline before returning the artifact. Don't ship a known-broken contract.
+
+    **Important findings**: report in chat as a follow-up note ("Self-check flagged: <issue>. The artifact is written; recommend revising via `revise: <change>`."). The artifact is still written so the user has something to react to.
+
+    **Time budget**: target 15-30 seconds for the self-check. If it would take longer, surface only the top 2-3 issues and let the user run a full `/review` for the deeper pass. The self-check is a guardrail, not a replacement for `/review`'s failure-mode walk and readiness verdict.
+
 Recommended response shape:
 
 ```text
