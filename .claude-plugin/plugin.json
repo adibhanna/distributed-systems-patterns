@@ -1,7 +1,7 @@
 {
   "name": "distributed-systems-patterns",
   "description": "Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, and operational artifacts for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Default outputs are decisions and contracts, not implementation code; specific libraries are user choices.",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": {
     "name": "Adi Bhanna",
     "url": "https://github.com/adibhanna"

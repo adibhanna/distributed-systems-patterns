@@ -4,16 +4,16 @@ This is the cross-tool entry point for Codex, Claude, OpenCode, Aider, Cursor, a
 
 ## Activation
 
-Apply this skill whenever the task involves designing systems at scale: integration, messaging, event-driven decisions and contracts, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture - plus the layer beyond code (team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, DR, lifecycle, governance). Default outputs are architectural decisions, contracts, and operational artifacts; code is shown only when explicitly requested.
+Apply this skill whenever the task involves designing systems at scale: integration, messaging, event-driven decisions and contracts, webhooks, queues, topics, brokers, async workflows, service-to-service consistency, message contracts, microservices, distributed systems, scaling, resilience, multi-region, or enterprise service architecture - plus the layer beyond code (team ownership and Conway boundaries, multi-tenancy, cost ownership, compliance, capacity, DR, lifecycle, governance). Six commands (`/design`, `/contract`, `/architecture`, `/review`, `/runbook`, `/prelaunch`) produce durable artifacts; the skill does not generate implementation code or tests.
 
 ## Connected system
 
-This skill is not 8 isolated commands; it is a connected system. Every artifact lives under one per-feature folder, and every write updates two index docs so the design stays navigable:
+This skill is six commands that share one artifact layout. Every artifact lives under one per-feature folder, and every write updates two index docs so the design stays navigable:
 
 - `docs/features/<slug>/README.md` aggregates a feature's info, system concerns, artifacts, dependencies, and owned channels. Sibling folders under it hold the artifacts: `design.md`, `adrs/`, `contracts/`, `schemas/`, `asyncapi/`, `runbooks/`, `launches/`.
 - `docs/system/catalog.md` lists every feature with one row each, linking to the per-feature README. Platform-wide ADRs that span features live at `docs/system/adrs/NNNN-<title>.md`.
 
-**Shared knowledge** lives at `docs/system/`. The skill writes platform-wide ADRs to `docs/system/adrs/`, platform-wide runbooks to `docs/system/runbooks/`, and platform standards to `docs/system/standards/<topic>.md`. Optional top-level docs (`glossary.md`, `topology.md`, `capacity.md`, `compliance.md`, `dr.md`) hold cross-cutting reference data. Feature artifacts reference these by relative path (`../../system/...`) rather than restating their content. Before writing a feature artifact, Glob `docs/system/` for applicable shared docs.
+**Shared knowledge** lives at `docs/system/`. Platform-wide ADRs land in `docs/system/adrs/` (use `/architecture` at platform scope), platform-wide runbooks in `docs/system/runbooks/` (use `/runbook` at platform scope), and platform standards as plain markdown under `docs/system/standards/<topic>.md`. Optional top-level docs (`glossary.md`, `topology.md`, `capacity.md`, `compliance.md`, `dr.md`) hold cross-cutting reference data. Feature artifacts reference these by relative path (`../../system/...`) rather than restating their content. Before writing a feature artifact, Glob `docs/system/` for applicable shared docs.
 
 Reader navigation: `docs/system/catalog.md` -> `docs/features/<slug>/README.md` -> any artifact under `docs/features/<slug>/{design,adrs,contracts,schemas,asyncapi,runbooks,launches}`. See SKILL.md items 16-17 for templates.
 
@@ -39,7 +39,7 @@ Do not apply for pure local request-response, pure frontend work, single-process
 9. **For architecture documents, produce decision-ready artifacts.** Load [`reference/architecture-documentation.md`](./reference/architecture-documentation.md) for design docs, RFCs, ADRs, implementation plans, migration plans, diagrams, trade-offs, rollout, and verification.
 10. **For production usage, use practical guides.** Load scenario playbooks, failure modes, security/compliance, testing strategy, operational runbooks, maturity model, or platform mappings when they match the request.
 11. **Reference shared knowledge before restating.** Glob `docs/system/standards/`, `docs/system/glossary.md`, `docs/system/compliance.md`, `docs/system/dr.md`, `docs/system/topology.md` before writing feature artifacts; link them rather than copy-pasting their content.
-12. **Keep the system navigable.** After writing any artifact, update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 16-17.
+12. **Keep the system navigable.** After writing any artifact, update `docs/features/<slug>/README.md` and `docs/system/catalog.md` so the system stays navigable. See SKILL.md items 15-16.
 
 ## Pattern Selection Excerpt
 
@@ -125,14 +125,10 @@ Full list: [`SKILL.md`](./SKILL.md) Anti-Patterns section.
 - Maturity model: [`reference/maturity-model.md`](./reference/maturity-model.md)
 - Evaluation prompts: [`reference/evaluation-prompts.md`](./reference/evaluation-prompts.md)
 - Go examples: [`reference/go-examples.md`](./reference/go-examples.md)
-- Go implementation patterns: [`reference/go-implementation-patterns.md`](./reference/go-implementation-patterns.md)
 - Production guide: [`reference/production-guide.md`](./reference/production-guide.md)
 - Message contract template: [`reference/message-contract-template.md`](./reference/message-contract-template.md)
-- Webhook security (Go): [`reference/webhook-security-go.md`](./reference/webhook-security-go.md)
 - Schema migration: [`reference/schema-migration.md`](./reference/schema-migration.md)
 - Cost and FinOps: [`reference/cost-and-finops.md`](./reference/cost-and-finops.md)
-- gRPC streaming: [`reference/grpc-streaming.md`](./reference/grpc-streaming.md)
-- LLM workflow patterns: [`reference/llm-workflow-patterns.md`](./reference/llm-workflow-patterns.md)
 - Non-Go pointers: [`reference/non-go-pointers.md`](./reference/non-go-pointers.md)
 
 Canonical skill: [`SKILL.md`](./SKILL.md).

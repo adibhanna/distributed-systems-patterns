@@ -10,7 +10,7 @@ Design or review one message contract. Keep business rules out of envelopes and 
 
 1. **Determine the producer feature.** A contract belongs to the feature whose service produces the channel. Glob `docs/features/*/README.md` for any service that lists this channel under "Channels owned" as `produced`. If found, use that feature's slug. If multiple match (rare), ask the user. If none match, ask the user "Which feature/service produces this channel?" and use the answer as the slug.
 2. State the owning team, escalation path, channel name (semantic and versioned, for example `orders.placed.v1`), and the patterns in play: Event Message vs Command Message, Datatype Channel, Publish-Subscribe vs Point-to-Point, Idempotent Receiver, Claim Check if payloads are large.
-3. Produce the CloudEvents 1.0.2 envelope with required fields (`id`, `source`, `type`, `subject`, `time`, `specversion`, `datacontenttype`) and the convention extensions used in this skill (`correlationid`, `causationid`, `partitionkey`, `traceparent`, `expirytime`).
+3. Produce the CloudEvents 1.0.2 envelope with required fields (`id`, `source`, `type`, `subject`, `time`, `specversion`, `datacontenttype`) and the convention extensions used in this skill (`correlationid`, `causationid`, `partitionkey`, `traceparent`, `expirytime`). The envelope example lives in the AsyncAPI file, not the contract doc.
 4. Produce the AsyncAPI 3.1 channel, operation (send/receive), message, and payload schema. Choose Avro, Protobuf, or JSON Schema and state why.
 5. Declare the compatibility mode: BACKWARD (default), FORWARD, or FULL. Name the CI gate that enforces it (Schema Registry compatibility, AsyncAPI diff, JSON Schema compatibility check).
 6. State the versioning policy: optional fields with defaults are minor; required fields, renamed fields, removed fields, or type changes require a new channel version with parallel `v1` + `v2` and a retirement date.
@@ -19,8 +19,8 @@ Design or review one message contract. Keep business rules out of envelopes and 
 8. Before writing, run a Glob for `docs/features/<slug>/**` to enumerate peer artifacts in the producer feature. Use matches to populate the `## Related artifacts` section of the `docs/features/<slug>/contracts/<channel>.md` file with concrete relative paths; for peers that don't exist yet, list the conventional path with a `(not yet written)` annotation.
 
 9. **Update the per-feature index and system catalog.** After writing the main artifact, also create or update:
-   - `docs/features/<slug>/README.md` - the per-feature entry point (slug is the producing feature determined in step 1). Append/update `## Channels owned` with the channel name (marked `produced`), and append the new contract path to `## Artifacts.Contracts`. If the file does not exist, create it from the template in SKILL.md item 16.
-   - `docs/system/catalog.md` - the system-level feature registry. Append/update the row for the producer feature `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
+   - `docs/features/<slug>/README.md` — the per-feature entry point (slug is the producing feature determined in step 1). Append/update `## Channels owned` with the channel name (marked `produced`), and append the new contract path to `## Artifacts.Contracts`. If the file does not exist, create it from the template in SKILL.md item 16.
+   - `docs/system/catalog.md` — the system-level feature registry. Append/update the row for the producer feature `<slug>`. If the file does not exist, create it from the template in SKILL.md item 17.
    These updates are part of the same command turn; do not leave them for a follow-up.
 
 ## Output
@@ -28,42 +28,44 @@ Design or review one message contract. Keep business rules out of envelopes and 
 **Write three files** for each contract under the producer feature's folder (use the channel name as slug, e.g. `orders.placed.v1`):
 
 1. `docs/features/<slug>/schemas/<channel>.json` (or `.avsc` for Avro, `.proto` for Protobuf) — the payload schema only.
-2. `docs/features/<slug>/asyncapi/<channel>.yaml` — the full AsyncAPI 3.1 spec for that channel.
-3. `docs/features/<slug>/contracts/<channel>.md` — the human-readable contract: owner, patterns, compatibility mode, versioning policy, PII classification, retention, DLQ, replay policy, and the CloudEvents envelope example. Include the contract checklist from `reference/message-contract-template.md` answered point-by-point.
+2. `docs/features/<slug>/asyncapi/<channel>.yaml` — the full AsyncAPI 3.1 spec for that channel, including the CloudEvents envelope example.
+3. `docs/features/<slug>/contracts/<channel>.md` — the human-readable contract. Target ~40 lines. The contract doc points at the schema and AsyncAPI files for wire-format detail; it does not duplicate them.
 
-Only the `docs/features/<slug>/contracts/<channel>.md` file gets the Summary + Related artifacts sections (schemas and AsyncAPI files have their own format).
-
-In `docs/features/<slug>/contracts/<channel>.md`, prepend:
+Use this structure for `docs/features/<slug>/contracts/<channel>.md`:
 
 ```markdown
+# Contract: `<channel>`
+
 ## Summary
 - **Status**: Draft | Active | Deprecating | Retired
 - **Date**: <YYYY-MM-DD>
 - **Channel**: `<channel>` (e.g. `orders.placed.v1`)
-- **Owner**: <team/escalation>
-- **TL;DR**: 1-sentence purpose.
+- **Owner**: <team / escalation>
+- **TL;DR**: 1 sentence purpose.
 
-## System concerns
-- **Owner team**: <team / Slack / on-call escalation>
-- **Tenancy**: <single-tenant | multi-tenant w/ specified isolation>
-- **Compliance**: <none | PII | GDPR | SOC2 | PCI | data residency>
-- **Cost owner**: <team / cost center / per-event budget>
-- **Capacity**: <expected p50/p99 volume; growth assumption>
-- **DR posture**: <RPO | RTO | region strategy>
-- **Lifecycle**: <creation date; deprecation trigger; replacement plan>
-```
+## Patterns
+[1-2 lines naming the patterns: Event Message vs Command, Datatype Channel, Idempotent Receiver, Claim Check, etc.]
 
-Append:
+## Producer and consumers
+[2-3 lines: producer service, known consumers, broker.]
 
-```markdown
+## Compatibility and versioning
+[2-4 lines: BACKWARD/FORWARD/FULL; CI gate; when to spin up v2; deprecation policy.]
+
+## Ordering, idempotency, retention
+- **Ordering key**: <field>
+- **Idempotency key**: <field>
+- **Retention**: <TTL>
+
+## DLQ and replay
+- **DLQ**: <channel> (owner: <team>)
+- **Replay/redrive**: <policy>
+
 ## Related artifacts
-[Paths are relative to `docs/features/<slug>/contracts/<channel>.md`.]
-- Schema: `../schemas/<channel>.<ext>` (this contract's payload schema)
-- AsyncAPI: `../asyncapi/<channel>.yaml` (channel and operation spec)
-- Design that requires this contract: `../design.md`
+- Schema: `../schemas/<channel>.<ext>`
+- AsyncAPI: `../asyncapi/<channel>.yaml`
+- Design: `../design.md`
 - Per-feature README: `../README.md`
-- Producer service: <name>
-- Consumer services: <names>
 - Runbooks: `../runbooks/` (DLQ triage, replay, schema rollback for this channel)
 ```
 

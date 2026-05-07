@@ -1,37 +1,19 @@
 ---
-description: Fan-out parallel review + failure-mode + readiness, synthesize go/no-go with rollback plan
+description: Run a comprehensive launch review and write the go/no-go decision with rollback plan
 ---
 
 Invoke the `distributed-systems-patterns` skill.
 
-`/prelaunch` is a **fan-out orchestrator** for distributed-systems changes. It runs three specialist subagents in parallel against the diff/PR, then merges their reports into a single go/no-go with a rollback plan.
+`/prelaunch` runs the `/review` logic (which already covers reliability, distributed-systems checklist, anti-patterns, failure-mode walk, system concerns, and the readiness verdict) and persists the result as a launch decision. Sequential, not fan-out: one comprehensive review, one decision file.
 
-## Phase A - Parallel fan-out
+1. Run `/review` against the diff or recent commits. Produce findings categorized as Critical / Important / Suggestion / System; the reliability and distributed-systems checklists; the anti-pattern list; the top 3-5 failure-mode entries with blast radius and mitigation; the readiness tier with gaps.
+2. Compute the launch decision. **Default to NO-GO if any Critical findings exist.** The user must explicitly accept the risk to override. Otherwise GO at the tier the review computed.
+3. Build the rollback plan: trigger conditions, exact procedure (feature flag flip, halt CDC, drain consumer, schema rollback), and recovery time objective. Mandatory before any GO.
+4. Before writing, Glob `docs/features/<slug>/**` to enumerate peer artifacts (design, ADRs, contracts, runbooks, prior launches). Populate `## Related artifacts` with matches; for missing peers, list the conventional path with `(not yet written)`.
 
-Spawn three subagents concurrently. **Issue all three Agent tool calls in a single assistant turn** - sequential calls defeat the purpose.
+## Output
 
-1. **Review** - Run `/review` logic: 8-question reliability checklist, distributed-systems checklist, anti-pattern flags, file:line findings.
-2. **Failure-mode** - Run `/failure-mode` logic: first failure, worst duplicate, blocked partition, retry storm, replay safety. Output the 8 review questions answered.
-3. **Readiness** - Run `/readiness` logic: current tier, evidence, gaps to Production-ready or Enterprise-critical.
-
-Each subagent gets its own context window and cannot spawn other subagents. If `code-reviewer`, `security-auditor`, `test-engineer` subagent types are available, use them; otherwise spawn `general-purpose` and load the relevant `reference/*.md` files in the prompt.
-
-## Phase B - Merge in main context
-
-1. Promote Critical reliability or anti-pattern findings to launch blockers.
-2. Cross-reference failure-mode findings with review's anti-pattern list - duplicates collapse, gaps surface.
-3. Cross-reference readiness gaps with review's checklist gaps - if they disagree, name the disagreement.
-4. Compute the readiness tier the change actually qualifies for (downgrade if necessary).
-
-## Phase C - Decision and rollback
-
-Before writing, Glob `docs/features/<slug>/**` to enumerate peer artifacts (design, ADRs, contracts, runbooks, prior launches) and populate `## Related artifacts` with matches; for missing peers, list the conventional path with `(not yet written)`.
-
-After writing the launch decision, **update the per-feature index and system catalog** in the same turn:
-- `docs/features/<slug>/README.md` - per-feature entry point. Append `launches/<YYYY-MM-DD>.md` to `## Artifacts.Launch decisions` with a link to the new launch doc, and update `## Service info`: bump `Tier` to the achieved tier (or downgrade if NO-GO) and `Last reviewed` to the launch date. If absent, create from SKILL.md item 16.
-- `docs/system/catalog.md` - system-level feature registry. Append/update the row for `<slug>` with new tier and last-reviewed date. If absent, create from SKILL.md item 17.
-
-**Write the decision to `docs/features/<slug>/launches/<YYYY-MM-DD>.md`** (today's date in ISO format; the slug is the folder, the filename is just the date). Create `docs/features/<slug>/launches/` if it does not exist. Use this structure:
+**Write the decision to `docs/features/<slug>/launches/<YYYY-MM-DD>.md`** (today's date in ISO format). Create `docs/features/<slug>/launches/` if it does not exist. Use this structure:
 
 ```markdown
 ## Summary
@@ -42,39 +24,35 @@ After writing the launch decision, **update the per-feature index and system cat
 - **TL;DR**: 1-sentence rationale for the GO/NO-GO call.
 
 ## System concerns
-- **Owner team**: <team / Slack / on-call escalation>
-- **Tenancy**: <single-tenant | multi-tenant w/ specified isolation>
-- **Compliance**: <none | PII | GDPR | SOC2 | PCI | data residency>
-- **Cost owner**: <team / cost center / per-event budget>
-- **Capacity**: <expected p50/p99 volume; growth assumption>
-- **DR posture**: <RPO | RTO | region strategy>
-- **Lifecycle**: <creation date; deprecation trigger; replacement plan>
+[Carry forward from the review — owner, tenancy, compliance, cost owner, capacity, DR, lifecycle.]
 
 ## Launch Decision
-### Blockers (must fix before ship)
-- [Source subagent: Critical finding + file:line]
-### Recommended fixes (should fix before ship)
-- [Source subagent: Important finding + file:line]
-### Acknowledged risks (shipping anyway)
-- [Risk + mitigation]
+
+### Blockers
+[Critical findings from review, with file:line. Must fix before ship.]
+
+### Recommended fixes
+[Important findings from review, with file:line. Should fix before ship.]
+
+### Acknowledged risks
+[Risks accepted to ship anyway. Each entry: risk + mitigation + accepted-by.]
+
 ### Rollback plan
-- Trigger conditions: [signals that prompt rollback]
-- Rollback procedure: [exact steps - feature flag flip, redrive halt, schema revert, etc.]
-- Recovery time objective: [target]
+- **Trigger**: <signals that prompt rollback>
+- **Procedure**: <exact steps — feature flag flip, halt CDC, drain consumer, schema rollback>
+- **RTO**: <target>
 
 ## Related artifacts
-- Design: `../design.md`; ADRs: `../adrs/`; Contracts: `../contracts/`; Runbooks: `../runbooks/`; README: `../README.md`. (Paths relative to this launch doc.)
-- Failure-mode notes: inline above (capture key findings in Acknowledged risks if shipping despite them).
-
-### Subagent reports (full)
-- [Review report] / [Failure-mode report] / [Readiness report]
+- Design: `../design.md`
+- ADRs: `../adrs/`
+- Contracts: `../contracts/`
+- Runbooks: `../runbooks/`
+- README: `../README.md`
+- System catalog: `../../../system/catalog.md`
 ```
 
+After writing the launch decision, **update the per-feature index and system catalog** in the same turn:
+- `docs/features/<slug>/README.md` — append `launches/<YYYY-MM-DD>.md` to `## Artifacts.Launch decisions`. Update `## Service info`: bump `Tier` to the achieved tier (or downgrade if NO-GO) and `Last reviewed` to the launch date. If absent, create from SKILL.md item 16.
+- `docs/system/catalog.md` — append/update the row for `<slug>` with new tier and last-reviewed date. If absent, create from SKILL.md item 17.
+
 Emit a one-line confirmation: `Ship decision: <GO|NO-GO>. Written to docs/features/<slug>/launches/<date>.md.` plus blocker count if NO-GO.
-
-## Rules
-
-1. Phase A subagents run in parallel - never sequentially. Subagents do not call each other; the main agent merges in Phase B.
-2. The rollback plan is mandatory before any GO decision.
-3. If any subagent flags a Critical anti-pattern (dual-write, ack-before-commit, unbounded retry, retry storm, distributed monolith), the default verdict is NO-GO unless the user accepts the risk.
-4. **Skip the fan-out only if all:** change touches 2 files or fewer, diff under 50 lines, does not touch a producer/consumer/broker config, outbox, workflow, schema, DLQ, or auth.

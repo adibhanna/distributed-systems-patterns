@@ -1,7 +1,7 @@
 ---
 name: distributed-systems-patterns
-description: Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, and operational artifacts for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Triggers include Kafka, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, Service Bus, NATS, Pulsar, Temporal, Step Functions, Debezium, CloudEvents, AsyncAPI, OpenTelemetry, KEDA, and service mesh, plus idempotency, DLQs, retries, ordering, schema evolution, replay, sharding, backpressure, circuit breaking, autoscaling, SLOs, RFCs, and ADRs. Default outputs are decisions and contracts, not implementation code; specific libraries are user choices.
-version: 0.2.0
+description: Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, runbooks, and launch decisions for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Triggers include Kafka, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, NATS, Pulsar, Temporal, Step Functions, Debezium, CloudEvents, AsyncAPI, OpenTelemetry, plus idempotency, DLQs, retries, ordering, schema evolution, replay, sharding, backpressure, circuit breaking, autoscaling, SLOs, RFCs, and ADRs. Six commands produce durable artifacts; the skill does not generate implementation code or tests.
+version: 0.6.0
 tags: [distributed-systems, messaging, event-driven, integration, architecture, microservices, kafka, aws, cloudevents, asyncapi]
 ---
 
@@ -9,21 +9,21 @@ tags: [distributed-systems, messaging, event-driven, integration, architecture, 
 
 ## Purpose
 
-This skill is a **connected system for designing distributed systems at scale**. It produces decisions, contracts, runbooks, and operational artifacts that link together into a per-service index and a system-level catalog, so a reader can navigate from "the system" down to a specific channel's runbook in two clicks.
+This skill produces durable architectural artifacts for distributed systems work: design docs, message contracts, ADRs, runbooks, and launch decisions. Six slash commands write these artifacts; one (`/review`) reads them plus the implementation diff and produces architectural findings.
 
-Scope covers integration, messaging, event-driven architecture, workflows, resilience, scaling, and cloud/platform design **plus the layer beyond code**: team ownership and Conway's Law boundaries, multi-tenancy, cost ownership, compliance (PII, GDPR, SOC2, data residency), capacity planning, disaster recovery, lifecycle (deprecation, migration, retirement), and governance. Default outputs are architectural and operational artifacts, not implementation code.
+The artifacts the skill produces (decisions, contracts, runbooks, launch decisions) are valuable when multiple teams or services must coordinate. The skill does NOT generate implementation code or tests - that's your team's job in their normal dev environment. The skill's value is in the decision and review layer, where teams typically under-invest.
 
-The skill is technology-neutral. Kafka topics, SQS queues, Temporal workflows, EventBridge rules, Kubernetes autoscalers, Envoy circuit breakers, Debezium outbox SMTs, CloudEvents envelopes, and AsyncAPI contracts are modern implementations of the same pattern-and-forces mindset. Specific package picks (which Kafka client, which ORM) are team decisions; the skill recommends categories and lists options with trade-offs.
+The skill is technology-neutral. Specific package picks (which Kafka client, which ORM) are team decisions; the skill recommends categories. Default outputs are architectural artifacts at canonical paths under `docs/features/<slug>/` and `docs/system/`.
 
 ## Who this skill is for
 
-Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. The artifacts (design docs, ADRs, contracts, runbooks, launch decisions) are valuable when multiple teams or services must coordinate; they are overhead when one engineer can hold the whole system in their head.
+Distributed-systems engineers, tech leads, staff/principal engineers, platform teams, and architects making cross-service decisions at scale. Six commands produce durable artifacts (design docs, ADRs, contracts, runbooks, launch decisions) that are valuable when multiple teams or services must coordinate; they are overhead when one engineer can hold the whole system in their head.
 
 **Not for**: single-process apps, single-function utilities, frontend-only work, quick local refactors, ETL jobs without service coordination, beginner pattern questions ("what is a queue?"), or pre-MVP prototypes that don't yet have users or operational costs.
 
-**Threshold for invoking the full skill**: at least two services or two teams must coordinate; or the work introduces durable infrastructure (broker, workflow engine, schema registry, mesh, cache fleet, shard, new consistency model); or the request explicitly asks for an ADR / RFC / runbook / launch decision.
+**Threshold for invoking the skill**: at least two services or two teams must coordinate; or the work introduces durable infrastructure (broker, workflow engine, schema registry, mesh, cache fleet, shard, new consistency model); or the request explicitly asks for an ADR / RFC / runbook / launch decision.
 
-**Decline behavior when below the threshold**: if the user invokes the skill (via vocabulary trigger or slash command) on a problem that does not meet the threshold, the skill must explicitly decline the full pipeline. Tell the user one sentence about why ("This is a single-process refactor; a regular prompt is faster") and answer the question simply, without producing design docs / ADRs / contracts. Examples that should trigger decline:
+**Decline behavior when below the threshold**: if the user invokes the skill (via vocabulary trigger or slash command) on a problem that does not meet the threshold, the skill must explicitly decline. Tell the user one sentence about why ("This is a single-process refactor; a regular prompt is faster") and answer the question simply, without producing design docs / ADRs / contracts. Examples that should trigger decline:
 
 - A single-team prototype, hackathon, or side project.
 - A single-process app with one database and no async work.
@@ -84,12 +84,8 @@ This skill is an operating procedure. Load only the reference file needed:
 - `reference/aws-service-mapping.md` - AWS-neutral mapping for SQS, SNS, EventBridge, Lambda, Kinesis, MSK, DynamoDB Streams, Step Functions, and S3.
 - `reference/platform-service-mapping.md` - GCP, Azure, Kafka, RabbitMQ, NATS, Pulsar, and cloud-neutral mapping.
 
-**Code reference** (load only when the user explicitly asks for implementation code):
+**Code patterns (loaded only when the user explicitly asks for boundary code snippets)**:
 - `reference/go-examples.md` - production-oriented Go snippets at pattern boundaries (outbox, idempotent receiver, DLQ, retry, Temporal saga). Library choices in these snippets are illustrative, not prescriptive.
-- `reference/go-implementation-patterns.md` - Go worker pools, timeouts, idempotency interfaces, shutdown, and workflow reminders.
-- `reference/webhook-security-go.md` - webhook signature verification with the boundary pattern in Go.
-- `reference/grpc-streaming.md` - gRPC server-streaming, bidirectional streams, deadlines, retry interceptors.
-- `reference/llm-workflow-patterns.md` - async LLM inference queueing, bounded retry, model-output validation, streaming token handoff.
 - `reference/non-go-pointers.md` - language-pointers for Java, TypeScript, and Python: where the patterns live in each ecosystem, with library options not picks.
 
 ## Mandatory Agent Contract
@@ -107,8 +103,7 @@ When this skill activates, every answer must include or perform these steps:
 9. If AWS services are in scope, load `reference/aws-service-mapping.md` and map the pattern to the AWS service without making the design AWS-only.
 10. If the risk is scale, consistency, resilience, service boundaries, multi-region, or enterprise operations, load `reference/distributed-systems-guide.md` and name the distributed-systems pattern(s), not only the messaging pattern(s).
 11. If the user asks for an architecture doc, design doc, RFC, ADR, technical plan, migration plan, or decision reference, load `reference/architecture-documentation.md` and produce a decision-ready document with patterns, alternatives, trade-offs, rollout, verification, and operations.
-12. For production-readiness, launch, incident, security, or testing requests, load the specific guide: `security-compliance.md`, `testing-strategy.md`, `operational-runbooks.md`, `failure-modes.md`, or `maturity-model.md`.
-13. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using one of the canonical paths under the per-feature folder layout:
+12. **Write deliverable artifacts to files on disk, not just to chat.** When the response is a design doc, ADR, RFC, implementation plan, message contract, runbook, launch decision, or any structured multi-section document the user is likely to keep, write it under `docs/` (or the repo's existing convention) using one of the canonical paths under the per-feature folder layout:
     - Design doc -> `docs/features/<slug>/design.md`
     - ADR (feature-scoped, default) -> `docs/features/<slug>/adrs/NNNN-<title>.md`
     - ADR (platform-wide) -> `docs/system/adrs/NNNN-<title>.md`
@@ -123,9 +118,9 @@ When this skill activates, every answer must include or perform these steps:
 
     Every deliverable artifact must include a **`## System concerns`** section near the top (after Summary, before the topic-specific structure) covering the layer beyond code: ownership/Conway boundary, tenancy, cost owner, compliance class, capacity expectation, DR posture, and lifecycle/retirement plan. Leave any field as `<TBD>` if unknown rather than omitting it - the placeholder forces the question to be asked.
 
-14. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/` produced by `/contract`. Runbooks belong in `docs/features/<slug>/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
+13. **Design docs are decision artifacts, not code artifacts.** A design doc captures patterns chosen, boundary contracts at the conceptual level (channel names, ordering keys, idempotency keys, retention, DLQ owner, compatibility mode), file/component inventory, alternatives, open questions, and readiness tier. Implementation code belongs in source files, not in the design doc. Schema files belong in `docs/features/<slug>/schemas/` and `docs/features/<slug>/asyncapi/` produced by `/contract`. Runbooks belong in `docs/features/<slug>/runbooks/`. If the user wants code after the design lands, treat that as a follow-up step.
 
-15. **Cross-link artifacts and include summary metadata.** Every file the skill writes (design, ADR, RFC, contract, runbook, launch decision) must include:
+14. **Cross-link artifacts and include summary metadata.** Every file the skill writes (design, ADR, RFC, contract, runbook, launch decision) must include:
 
     a. A `## Summary` block at the top with: `Status:` (Draft | Proposed | Accepted | Superseded | Retired), `Date:` (`<YYYY-MM-DD>`), and a 1-2 sentence TL;DR.
 
@@ -145,7 +140,7 @@ When this skill activates, every answer must include or perform these steps:
 
     d. Reading-before-writing: when writing an artifact for a feature where related docs already exist, the agent should read those docs (at least their Summary blocks) so the new artifact's decisions are consistent with prior ones - particularly patterns named, ordering keys, owner team, and channel names.
 
-16. **Maintain a per-feature index doc.** Every artifact-writing command, after writing its main file, must also create or update `docs/features/<slug>/README.md` for the feature. This per-feature README aggregates every artifact for that feature into one entry point. Use this template, filling sections that apply and leaving placeholders where information is unknown:
+15. **Maintain a per-feature index doc.** Every artifact-writing command, after writing its main file, must also create or update `docs/features/<slug>/README.md` for the feature. This per-feature README aggregates every artifact for that feature into one entry point. Use this template, filling sections that apply and leaving placeholders where information is unknown:
 
     ```markdown
     # <Feature Name>
@@ -208,7 +203,7 @@ When this skill activates, every answer must include or perform these steps:
 
     If the file does not exist, create it with placeholders.
 
-17. **Maintain a system-level catalog.** Whenever a per-feature README is created or updated, the command must also create or update `docs/system/catalog.md` with one row per feature. Use this template:
+16. **Maintain a system-level catalog.** Whenever a per-feature README is created or updated, the command must also create or update `docs/system/catalog.md` with one row per feature. Use this template:
 
     ```markdown
     # System Catalog
@@ -235,13 +230,13 @@ When this skill activates, every answer must include or perform these steps:
     Rows should be removed if the corresponding doc/folder does not exist (a row with link `topology.md` requires the file to exist; otherwise omit the row entirely).
     ```
 
-    Sort the table alphabetically by slug. Do not invent entries for features that have no per-feature README. The catalog is a registry of what exists, not aspirational. The `/standard` and `/runbook --scope=platform` commands populate the cross-cutting concerns table as they write new files; the catalog reflects state, not aspiration.
+    Sort the table alphabetically by slug. Do not invent entries for features that have no per-feature README. The catalog is a registry of what exists, not aspirational. Platform standards (plain markdown under `docs/system/standards/`), platform-wide ADRs from `/architecture --scope=platform`, and platform runbooks from `/runbook --scope=platform` populate the cross-cutting concerns table as files appear; the catalog reflects state, not aspiration.
 
     The catalog uses the term **feature** (matching the folder name `docs/features/<slug>/`) rather than "service" because a feature may span multiple services or sub-systems. The slug is the same identifier used across all artifacts for that feature.
 
-18. **Reference shared knowledge before restating it.** Before writing any feature artifact (design, contract, runbook, ADR, launch decision), Glob `docs/system/standards/*.md`, `docs/system/glossary.md`, `docs/system/compliance.md`, `docs/system/dr.md`, `docs/system/topology.md`, and `docs/system/adrs/*.md`. If a shared doc covers a concern the feature artifact would otherwise restate (e.g. observability conventions, channel-naming rules, compliance class, DR posture), reference the shared doc by path instead of copy-pasting its content. The feature's `## Shared references` section in its per-feature README captures which shared docs apply.
+17. **Reference shared knowledge before restating it.** Before writing any feature artifact (design, contract, runbook, ADR, launch decision), Glob `docs/system/standards/*.md`, `docs/system/glossary.md`, `docs/system/compliance.md`, `docs/system/dr.md`, `docs/system/topology.md`, and `docs/system/adrs/*.md`. If a shared doc covers a concern the feature artifact would otherwise restate (e.g. observability conventions, channel-naming rules, compliance class, DR posture), reference the shared doc by path instead of copy-pasting its content. The feature's `## Shared references` section in its per-feature README captures which shared docs apply.
 
-    If a shared doc does not yet exist for a recurring concern (the same convention restated in 3+ features), surface that in chat as a recommendation: "Consider promoting <concept> to docs/system/standards/<topic>.md so all features can reference it." Do not auto-create platform docs without explicit user direction.
+    Platform standards live as plain markdown under `docs/system/standards/<topic>.md`; users author them directly or use `/architecture` at platform scope. If a shared doc does not yet exist for a recurring concern (the same convention restated in 3+ features), surface that in chat as a recommendation: "Consider promoting <concept> to docs/system/standards/<topic>.md so all features can reference it." Do not auto-create platform docs without explicit user direction.
 
 Recommended response shape:
 

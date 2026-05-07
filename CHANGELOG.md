@@ -4,6 +4,34 @@ All notable changes to the `distributed-systems-patterns` skill are recorded her
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-05-07
+
+### Removed (BREAKING)
+
+Six commands removed to simplify the skill and refocus on durable decision artifacts:
+
+- `/implement` - competed with the team's actual dev environment (IDE, codegen, framework scaffolding). Generated code with bugs that /review then flagged - wasted cycles. Your team's existing tools do this better.
+- `/test` - same problem. Every team has TDD/test frameworks. The skill's fabricated test names were less useful than the team's existing patterns.
+- `/build` - orchestrator no longer pulls weight without /implement and /test. The 30-60 min walkthrough was overhead for marginal value.
+- `/failure-mode` - folded into /review.
+- `/readiness` - folded into /review.
+- `/standard` - folded into /architecture at platform scope.
+
+### Changed
+
+- /design output trimmed from 100-150 lines to 60-80 lines. Dropped Modern realization table (the team picks tools), File and component plan (the team owns implementation), Distributed-systems checklist (key answers fold into System concerns).
+- /contract doc trimmed from ~100 lines to ~40 lines. Dropped CloudEvents envelope example (lives in the message-contract-template reference), full point-by-point contract checklist (key items fold into slim sections).
+- /review absorbs failure-mode and readiness analysis. One conversational review now covers patterns, anti-patterns, failure modes, and tier verdict.
+- /prelaunch simplified: runs /review's logic and writes the launch decision. No more parallel-subagent fan-out (with /failure-mode and /readiness gone, the fan-out was vestigial).
+
+### Why
+
+Honest assessment: the v0.5.0 skill went from "decision artifacts to bridge cross-team coordination" to "full pipeline that does the engineering team's job." The first is high-leverage. The second has been done before (Cookiecutter, generators, frameworks) and rarely sticks because every team has its own conventions. The 60+ files generated per feature, 30-60 min runtime, and bugs introduced by /implement (that /review then caught) were signals that /implement and /test were dilutive.
+
+v0.6.0 keeps what's high-leverage: the decision and review layer where teams under-invest. Drops what competes with the team's existing dev environment.
+
+Six commands. ~20 min total per feature. 5-10 files instead of 60. Focused on what humans don't write under deadline pressure but regret missing later.
+
 ## [0.3.0] - 2026-05-06
 
 ### Changed (BREAKING - path layout)
