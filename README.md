@@ -88,6 +88,49 @@ Two clicks from `docs/system/catalog.md` to any artifact. Every doc has a `## Re
 
 **Shared knowledge** (broker choice, channel naming, observability standard) lives under `docs/system/`. The rule: **reference, don't restate**. Per-feature READMEs link applicable platform docs rather than copy-paste them.
 
+## Glossary
+
+The skill uses distributed-systems vocabulary directly. Quick definitions for the most common terms:
+
+### Artifacts the skill produces
+- **Design doc** — patterns chosen, channel boundaries, system concerns. The "what and why" before code.
+- **ADR (Architecture Decision Record)** — one durable decision in Nygard format: Status / Context / Decision / Consequences / Alternatives. Outlasts the code.
+- **Contract** — wire-format definition for one channel: schema + AsyncAPI spec + human-readable doc.
+- **Runbook** — step-by-step procedure for a paged engineer at 2 a.m. (DLQ triage, replay, region failover).
+- **Launch decision** — pre-launch GO/NO-GO with blockers, acknowledged risks, and a mandatory rollback plan.
+
+### Messaging
+- **Channel** — a named stream that carries one event type, e.g. `orders.placed.v1`.
+- **Broker** — message-passing infrastructure: Kafka, RabbitMQ, SQS/SNS, NATS, Pub/Sub.
+- **DLQ (Dead Letter Queue)** — where messages land when they can't be processed.
+- **Schema Registry** — central store of message schemas with compatibility enforcement on every change.
+- **CloudEvents** — standard message envelope (`id`, `source`, `type`, `subject`, `time`, ...).
+- **AsyncAPI** — OpenAPI-equivalent for async/event-driven APIs; the schema for your channels.
+- **Saga / Process Manager** — multi-step business flow with explicit compensation steps when later stages fail.
+- **Outbox** — atomic DB-write + publish via a transactional outbox table relayed to the broker.
+- **Idempotent Receiver** — consumer that produces the same result whether a message arrives once or many times (deduplicates by event id).
+- **CDC (Change Data Capture)** — stream of database row changes turned into events (Debezium, DynamoDB Streams).
+
+### Schema evolution
+- **BACKWARD compatibility** — new code can read old data. Adding optional fields is safe; closed schemas (`additionalProperties: false`) and closed enums break it.
+- **FORWARD compatibility** — old code can read new data; new fields must be ignorable.
+- **FULL compatibility** — both BACKWARD and FORWARD; the strictest mode.
+
+### Anti-patterns
+- **Dual-write** — writing to DB and publishing to a broker as separate steps. One can succeed while the other fails. Use Outbox + CDC instead.
+- **Ack-before-commit** — acknowledging a message before its side-effects are persisted; loses messages on crash.
+- **Retry storm** — multiple layers (client, mesh, broker, SDK) all retry independently, multiplying load on a degraded dependency.
+- **Distributed monolith** — services that look independent but cannot deploy without coordinating with each other.
+- **Distributed 2PC** — two-phase commit across services. Avoid. Use saga + compensation.
+
+### Operations
+- **Readiness tier** — maturity classification: **Prototype** (working but not safe to depend on) → **Service-ready** (one team can run it) → **Production-ready** (real users, real SLOs) → **Enterprise-critical** (DR, compliance, multi-region).
+- **System concerns** — the layer beyond code: ownership, tenancy, compliance, cost, capacity, DR, lifecycle. Every artifact captures these.
+- **Replay / Backfill** — reprocess historical messages to recover from a bug or catch up a new consumer.
+- **Region failover** — promote a secondary region to primary after the primary fails. RPO/RTO are the data-loss / recovery-time targets.
+
+For deeper definitions and modern realizations of each pattern, see [`reference/catalog.md`](reference/catalog.md) and [`reference/decision-tree.md`](reference/decision-tree.md).
+
 ## Install
 
 **Plugin marketplace** (recommended):
