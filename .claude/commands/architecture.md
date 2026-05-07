@@ -49,6 +49,20 @@ Use these relative paths in the doc's `## Related artifacts` section:
   - Catalog: `../catalog.md`
   - Feature READMEs that this ADR affects: `../../features/<slug>/README.md`
 
-**Before returning, run the auto self-check** (SKILL.md item 18): scan for anti-patterns named in Decision/Consequences, verify Status field is filled, refuse all-`<TBD>` system concerns, verify alternatives reference real options and superseded ADRs link back. Critical findings are fixed inline; Important findings are reported in chat.
+**Before returning, run the auto self-check** (SKILL.md item 18). For ADRs/RFCs specifically, the self-check must catch:
+
+1. **Anti-patterns** named in Decision/Consequences (dual-write, 2PC, unbounded retry, shared OLTP, distributed monolith).
+2. **Status filled** (Proposed | Accepted | Deferred | Superseded).
+3. **System concerns** not all-`<TBD>`; require at minimum owner, tenancy, compliance.
+4. **Alternatives** reference real options with explicit reject reasons (not "we just preferred X").
+5. **Superseded ADRs** link back from the new ADR's `## Related artifacts` and have their `Status:` updated to `Superseded by ADR-NNNN`.
+6. **No Schrödinger's decision**: the Decision section must either commit to a choice with a documented downgrade trigger and decision owner, or set `Status: Deferred` and name the blocking question + due date. Reject decisions shaped as `"X with Y as fallback if Z"` that lack the trigger + owner.
+7. **Concrete criteria** in every rollout abort gate, divergence alert, and resilience claim. `"Alert on divergence"` is incomplete; `"alert when end-to-end p99 delta > 30% over a 10-min window"` is acceptable.
+8. **Per-scope qualification** in the resilience section. If the feature owns multiple channels and the ADR says `"X: not applicable"`, split per channel — or qualify which channels the claim applies to.
+9. **Pattern-mapping attribution**: any compound row (`"Bulkhead + circuit breaker"`) must either split or have the Tool column truthfully attribute each pattern. Don't claim the chosen runtime does something it doesn't (e.g. Temporal does not provide native circuit breakers).
+10. **Open-question / rollout cross-reference**: every open question that affects rollout must be referenced from the rollout phase that depends on it (with due date), and every rollout phase depending on an unresolved choice must name the question that owns the resolution.
+11. **Sibling cross-references resolve**: when the ADR says `"covered in <runbook>.md class X"`, Glob the runbook, read its summary, and verify it actually describes class X without contradicting the ADR's claim.
+
+Critical findings are fixed inline. Important findings are reported in chat as a follow-up note.
 
 Emit a one-line confirmation in chat: `<DocType> written to <path>`. Do not paste the full document back into chat. If the user explicitly says "show in chat" or "don't write a file", respond conversationally instead.

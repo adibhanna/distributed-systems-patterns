@@ -1,7 +1,7 @@
 ---
 name: distributed-systems-patterns
 description: Apply distributed-systems, messaging, and integration patterns to architectural decisions, message contracts, runbooks, and launch decisions for event-driven, microservice, queue, broker, saga, outbox, CDC, workflow, scaling, resilience, and multi-region work. Triggers include Kafka, RabbitMQ, SQS/SNS/EventBridge, Pub/Sub, NATS, Pulsar, Temporal, Step Functions, Debezium, CloudEvents, AsyncAPI, OpenTelemetry, plus idempotency, DLQs, retries, ordering, schema evolution, replay, sharding, backpressure, circuit breaking, autoscaling, SLOs, RFCs, and ADRs. Six commands produce durable artifacts; the skill does not generate implementation code or tests.
-version: 0.6.0
+version: 0.6.2
 tags: [distributed-systems, messaging, event-driven, integration, architecture, microservices, kafka, aws, cloudevents, asyncapi]
 ---
 
@@ -238,7 +238,9 @@ When this skill activates, every answer must include or perform these steps:
 
     Platform standards live as plain markdown under `docs/system/standards/<topic>.md`; users author them directly or use `/architecture` at platform scope. If a shared doc does not yet exist for a recurring concern (the same convention restated in 3+ features), surface that in chat as a recommendation: "Consider promoting <concept> to docs/system/standards/<topic>.md so all features can reference it." Do not auto-create platform docs without explicit user direction.
 
-18. **Auto self-check before declaring artifact-writing work complete.** After every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/prelaunch`), run a quick self-check pass before returning. The self-check is a subset of `/review` focused on inconsistencies and traps the agent should catch in its own work:
+18. **Auto self-check before declaring artifact-writing work complete.** After every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/prelaunch`), run a quick self-check pass before returning. The self-check is a subset of `/review` focused on inconsistencies and traps the agent should catch in its own work.
+
+    **Artifact-trap checks** (the easy ones — do these every time):
 
     - **Anti-pattern scan** against the just-produced artifact (dual-write, ack-before-commit, unbounded retry, missing DLQ owner, distributed monolith, shared OLTP, distributed 2PC).
     - **Cross-file consistency**: contract ordering keys match the design's declared keys; channel names in contracts match channel names in the design's Boundary contracts section; system concerns in the contract match the design's System concerns.
@@ -247,7 +249,19 @@ When this skill activates, every answer must include or perform these steps:
     - **System concerns completeness**: refuse to return an artifact where every system-concerns line is `<TBD>`. Force at least owner, tenancy, and compliance to be specified or explicitly flagged as needing user input.
     - **Cross-link integrity**: verify every relative path in the artifact's `## Related artifacts` section points to a real or conventional path.
 
-    **Critical findings**: fix inline before returning the artifact. Don't ship a known-broken contract.
+    **Claim-rigor checks** (apply to any artifact that makes behavior claims — designs, ADRs, runbooks, launch decisions):
+
+    - **Concrete-criteria rule**: every "alert if X", "abort gate", "trigger when", "degrade on", "rollback when", "monitor for divergence", or "not applicable when" claim must name a specific threshold (number, duration, percentage, or named state). `"alert on divergence"` is incomplete; `"alert when end-to-end p99 delta exceeds 30% over a 10-min window"` is acceptable. If the threshold is genuinely TBD, write `<TBD: criterion>` so it's visible — never silently leave the claim unbacked.
+    - **Per-scope qualification rule**: when an artifact makes a behavior claim (`"X is not applicable"`, `"X is handled"`, `"X is mitigated"`) and the feature owns multiple channels, multiple tenants, multiple regions, or multiple sub-flows, the claim must be qualified per scope — or split into separate claims. Generic `"Lost event: not applicable"` is wrong if the feature has channels with differing semantics; split into `"Lost saga events: not applicable (Temporal history)"` and `"Lost lifecycle events: still possible, mitigated by retry + dedup"`.
+    - **Sibling cross-reference rule**: when an artifact says `"covered in <path>"`, `"per <runbook>"`, `"see <doc>"`, or `"handled by <artifact>"`, Glob to confirm the path exists. If it exists, read its Summary block (plus the section the reference points at). Verify the sibling does not contradict the claim — e.g. an ADR claiming `"failure mode X is covered in runbook.md class A"` requires runbook.md class A to actually describe failure mode X. If the sibling contradicts, flag for the human to reconcile rather than silently mismatching.
+    - **Pattern-mapping attribution rule** (ADRs/RFCs with pattern tables): rows that name compound patterns (e.g. `"Bulkhead + circuit breaker"`) must either split into one row per pattern or have the Tool column truthfully attribute capabilities. Don't claim a runtime implements something it doesn't (Temporal does not provide native circuit breakers; that lives in worker code). If the table overclaims, split or annotate.
+
+    **Decision-commitment checks** (ADRs and RFCs only):
+
+    - **No Schrödinger's decision**: refuse Decision sections shaped as `"use X with Y as fallback if Z"`, `"either X or Y"`, or `"X (TBD if Y)"` without (a) an explicit committed choice, (b) a documented trigger naming what would cause the alternative to take over and how it would be measured, and (c) a decision owner. If the choice genuinely cannot be made yet, set `Status: Deferred` (not `Proposed`) and name the blocking question + its due date.
+    - **Open-question / rollout cross-reference**: every open question that affects rollout must be referenced from the rollout phase that depends on it (with its due date), and every rollout phase that depends on an unresolved choice must name the open question that owns the resolution.
+
+    **Critical findings**: fix inline before returning the artifact. Don't ship a known-broken contract or a Schrödinger ADR.
 
     **Important findings**: report in chat as a follow-up note ("Self-check flagged: <issue>. The artifact is written; recommend revising via `revise: <change>`."). The artifact is still written so the user has something to react to.
 

@@ -4,6 +4,38 @@ All notable changes to the `distributed-systems-patterns` skill are recorded her
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-05-07
+
+### Added
+
+Self-check rules expanded to catch classes of issue that human review was previously catching after the fact. SKILL.md item 18 now codifies four reusable claim-rigor rules and two ADR-specific decision-commitment rules; `architecture.md` spells out the 11 ADR self-check items.
+
+**Claim-rigor rules** (any artifact making behavior claims):
+
+- **Concrete-criteria rule** — every "alert if X", "abort gate", "trigger when", "monitor for divergence" claim must name a specific threshold (number, duration, percentage, or named state). `"alert on divergence"` is incomplete; `"alert when end-to-end p99 delta exceeds 30% over a 10-min window"` is acceptable.
+- **Per-scope qualification rule** — when a feature owns multiple channels/tenants/regions, behavior claims must be qualified per scope. Generic `"Lost event: not applicable"` is wrong if the feature has channels with differing semantics; split into per-channel claims.
+- **Sibling cross-reference rule** — when an artifact says `"covered in <runbook>.md class X"`, Glob to confirm the runbook exists, read its summary, and verify it actually describes class X without contradicting the claim.
+- **Pattern-mapping attribution rule** (ADRs/RFCs) — compound rows like `"Bulkhead + circuit breaker"` must split or have the Tool column truthfully attribute each pattern. Don't claim the chosen runtime does something it doesn't (e.g. Temporal does not provide native circuit breakers).
+
+**Decision-commitment rules** (ADRs/RFCs only):
+
+- **No Schrödinger's decision** — Decision sections shaped as `"X with Y as fallback if Z"` are rejected unless they include a documented downgrade trigger naming what would cause the alternative to take over and a decision owner. If the choice cannot be made yet, set `Status: Deferred` and name the blocking question + due date.
+- **Open-question / rollout cross-reference** — every open question affecting rollout must be referenced from the rollout phase that depends on it (with due date), and every rollout phase depending on an unresolved choice must name the question that owns the resolution.
+
+### Why
+
+Review of a generated saga-orchestrator ADR surfaced six classes of issue that the v0.6.1 self-check missed: a soft Decision ("X with Y as fallback if Z" without a trigger), a resilience claim that was true for one channel but not another, a pattern-mapping row that overclaimed runtime capabilities, an "alert on divergence" criterion without a threshold, and an open question whose dependency on the rollout was never linked. These are all systematic patterns the agent can detect at write-time. Codifying them in the self-check moves the catch from human review back to the agent's own pre-return pass.
+
+## [0.6.1] - 2026-05-07
+
+### Added
+
+Auto self-check after every artifact-writing command (`/design`, `/contract`, `/architecture`, `/runbook`, `/prelaunch`). Self-check is a 15-30s subset of `/review` focused on inconsistencies the agent should catch in its own work: anti-pattern scan, cross-file consistency, schema-evolution traps (`additionalProperties: false` + BACKWARD), system-concerns completeness, cross-link integrity. Critical findings are fixed inline; Important findings are reported in chat as a `revise:` recommendation.
+
+### Why
+
+Without the inline self-check, simple traps (closed schema + BACKWARD compatibility, channel-name mismatch between design and contract) only got caught when the user ran `/review` later. Adding the self-check moves catch to the same turn, with negligible time cost (1:26 with self-check vs 1:28 without in measured runs).
+
 ## [0.6.0] - 2026-05-07
 
 ### Removed (BREAKING)

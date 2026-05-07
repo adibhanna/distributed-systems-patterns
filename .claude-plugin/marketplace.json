@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "distributed-systems-patterns",
-      "version": "0.6.0",
+      "version": "0.6.2",
       "source": {
         "source": "github",
         "repo": "adibhanna/distributed-systems-patterns"
